@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### claude ###
+.claude/settings.local.json
+.claude/cache/
+.claude/tmp/
+.claude/worktrees/
+.claude/*.log
+
+### env ###
+.env
+.env.*
