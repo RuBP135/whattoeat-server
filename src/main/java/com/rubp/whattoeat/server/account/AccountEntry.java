@@ -1,6 +1,9 @@
 package com.rubp.whattoeat.server.account;
 
+import com.rubp.whattoeat.server.account.model.AccountStatus;
 import jakarta.persistence.*;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "account")
