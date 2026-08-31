@@ -1,6 +1,6 @@
 package com.rubp.whattoeat.server.account;
 
-import com.rubp.whattoeat.server.account.model.AccountStatus;
+import com.rubp.whattoeat.server.account.model.Role;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -18,7 +18,7 @@ public class AccountEntry {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AccountStatus status;
+    private Role status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -26,7 +26,7 @@ public class AccountEntry {
 
     protected AccountEntry() { }
 
-    public AccountEntry(String uid, AccountStatus status, Instant createdAt) {
+    public AccountEntry(String uid, Role status, Instant createdAt) {
         this.uid = uid;
         this.status = status;
         this.createdAt = createdAt;
@@ -34,11 +34,11 @@ public class AccountEntry {
 
 
     public void active() {
-        this.status = AccountStatus.ACTIVE;
+        this.status = Role.ACTIVE;
     }
 
     public void disable() {
-        this.status = AccountStatus.DISABLED;
+        this.status = Role.DISABLED;
     }
 
 
@@ -50,7 +50,7 @@ public class AccountEntry {
         return uid;
     }
 
-    public AccountStatus getStatus() {
+    public Role getStatus() {
         return status;
     }
 
