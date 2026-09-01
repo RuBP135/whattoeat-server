@@ -60,7 +60,7 @@ public class AccountService {
                     throw exception;
                 }
 
-                log.warn("生成了重复的uid，尝试次数{}", attempt + 1);
+                log.warn("生成了重复的uid，尝试次数 {}", attempt + 1);
             }
         }
 
