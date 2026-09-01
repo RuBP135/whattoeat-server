@@ -1,5 +1,6 @@
 package com.rubp.whattoeat.server.account;
 
+import com.rubp.whattoeat.server.account.exception.UniqueUidGenerateException;
 import com.rubp.whattoeat.server.account.model.AccountStatus;
 import com.rubp.whattoeat.server.account.model.Role;
 
@@ -49,7 +50,7 @@ public class AccountService {
             }
         }
 
-        throw new IllegalStateException("无法创建唯一的uid");
+        throw new UniqueUidGenerateException("无法创建唯一的uid");
     }
 
 
