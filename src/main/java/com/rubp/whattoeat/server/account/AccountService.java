@@ -38,7 +38,7 @@ public class AccountService {
 
         log.info("正在创建匿名账户");
 
-        for(int attemp = 0; attemp < ATTEMPT_LIMIT; ++attemp){
+        for(int attempt = 0; attempt < ATTEMPT_LIMIT; ++attempt){
             String uid = generateUid();
 
             if(accountRepository.existsByUid(uid)) continue;
@@ -60,7 +60,7 @@ public class AccountService {
                     throw exception;
                 }
 
-                log.warn("生成了重复的uid，尝试次数{}", attemp + 1);
+                log.warn("生成了重复的uid，尝试次数{}", attempt + 1);
             }
         }
 
