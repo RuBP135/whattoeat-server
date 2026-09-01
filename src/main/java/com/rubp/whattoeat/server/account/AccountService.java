@@ -2,6 +2,9 @@ package com.rubp.whattoeat.server.account;
 
 import com.rubp.whattoeat.server.account.model.AccountStatus;
 import com.rubp.whattoeat.server.account.model.Role;
+
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -14,6 +17,8 @@ public class AccountService {
     private static final long UID_BOUND = 10_000_000_000L;
     private static final int ATTEMPT_LIMIT = 5;
 
+    private static final String UID_UNIQUE_CONSTRAINT = "unique_account_uid";
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     private final AccountRepository accountRepository;
@@ -25,25 +30,46 @@ public class AccountService {
 
 
     public AccountEntry createAnonymousAccount() {
-        String uid;
+        for(int attemp = 0; attemp < ATTEMPT_LIMIT; ++attemp){
+            String uid = generateUid();
 
-        do {
-            uid = generateUid();
-        } while(accountRepository.existsByUid(uid));
+            if(accountRepository.existsByUid(uid)) continue;
 
-        AccountEntry account = new AccountEntry(
-                uid,
-                Role.USER,
-                AccountStatus.ACTIVE,
-                Instant.now()
-        );
+            try {
+                return accountRepository.saveAndFlush(new AccountEntry(
+                        uid,
+                        Role.USER,
+                        AccountStatus.ACTIVE,
+                        Instant.now()
+                ));
+            } catch (DataIntegrityViolationException exception){
+                if(!isUidUniqueViolation(exception)){
+                    throw exception;
+                }
+            }
+        }
 
-        return accountRepository.save(account);
+        throw new IllegalStateException("无法创建唯一的uid");
     }
 
 
     private String generateUid() {
         long value = secureRandom.nextLong(MIN_UID, UID_BOUND);
         return Long.toString(value);
+    }
+
+    private boolean isUidUniqueViolation(DataIntegrityViolationException exception){
+
+        Throwable cause = exception;
+
+        while(cause != null){
+            if(cause instanceof ConstraintViolationException violationException
+                    && UID_UNIQUE_CONSTRAINT.equals(violationException.getConstraintName())){
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+
     }
 }
