@@ -7,14 +7,22 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "account")
+@Table(
+        name = "account",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "unique_account_uid",
+                        columnNames = "uid"
+                )
+        }
+)
 public class AccountEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, updatable = false, length = 10)
+    @Column(nullable = false, updatable = false, length = 10)
     private String uid;
 
     @Enumerated(EnumType.STRING)
@@ -39,7 +47,7 @@ public class AccountEntry {
     }
 
 
-    public void active() {
+    public void activate() {
         this.status = AccountStatus.ACTIVE;
     }
 
