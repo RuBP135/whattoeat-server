@@ -8,59 +8,11 @@ WhatToEat2 的后端服务，为 Android 与 iOS 客户端提供菜品及点评�
 - 接收并管理用户上传的菜品
 - 处理菜品评分与评论的提交和查询
 
-> 项目目前处于初始开发阶段，业务接口和数据持久化功能仍在完善中。
+## 望周知
+- 本项目只是为 WhatToEat 提供数据服务
+- 请勿上传与校园食物无关亦或是非法的内容
 
-## 技术栈
+> 项目目前还处于初始开发阶段...
 
-- Java 21
-- Spring Boot 4.1
-- Spring Web MVC
-- Jakarta Bean Validation
-- Maven
-
-## 本地运行
-
-### 环境要求
-
-- JDK 21+
-- 无需单独安装 Maven，项目已包含 Maven Wrapper
-
-### 启动服务
-
-Linux、macOS 或 WSL：
-
-```bash
-./mvnw spring-boot:run
-```
-
-Windows：
-
-```bat
-mvnw.cmd spring-boot:run
-```
-
-服务默认运行在 `http://localhost:8080`。
-
-## 构建与测试
-
-```bash
-# 运行测试
-./mvnw test
-
-# 构建可执行 JAR
-./mvnw clean package
-
-# 运行构建产物
-java -jar target/whattoeat-server-0.0.1-SNAPSHOT.jar
-```
-
-## 项目结构
-
-```text
-whattoeat-server/
-├── src/main/java/          # 应用与业务代码
-├── src/main/resources/     # 配置及资源文件
-├── src/test/java/          # 自动化测试
-├── pom.xml                 # Maven 项目配置
-└── mvnw                    # Maven Wrapper
-```
+- 公测阶段我们将开放匿名登录
+- 后续将要求邮箱或西电统一身份认证（如果可以的话）
