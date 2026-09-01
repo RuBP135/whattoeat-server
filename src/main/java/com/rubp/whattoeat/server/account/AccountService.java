@@ -5,6 +5,8 @@ import com.rubp.whattoeat.server.account.model.AccountStatus;
 import com.rubp.whattoeat.server.account.model.Role;
 
 import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,8 @@ public class AccountService {
 
     private static final String UID_UNIQUE_CONSTRAINT = "unique_account_uid";
 
+    private static final Logger log = LoggerFactory.getLogger(AccountService.class);
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     private final AccountRepository accountRepository;
@@ -31,22 +35,32 @@ public class AccountService {
 
 
     public AccountEntry createAnonymousAccount() {
+
+        log.info("正在创建匿名账户");
+
         for(int attemp = 0; attemp < ATTEMPT_LIMIT; ++attemp){
             String uid = generateUid();
 
             if(accountRepository.existsByUid(uid)) continue;
 
             try {
-                return accountRepository.saveAndFlush(new AccountEntry(
+                AccountEntry entry = accountRepository.saveAndFlush(new AccountEntry(
                         uid,
                         Role.USER,
                         AccountStatus.ACTIVE,
                         Instant.now()
                 ));
+
+                log.info("创建了一个匿名账户");
+
+                return entry;
+
             } catch (DataIntegrityViolationException exception){
                 if(!isUidUniqueViolation(exception)){
                     throw exception;
                 }
+
+                log.warn("生成了重复的uid，尝试次数{}", attemp + 1);
             }
         }
 
