@@ -44,7 +44,7 @@ public class AccountService {
             if(accountRepository.existsByUid(uid)) continue;
 
             try {
-                AccountEntry entry = accountRepository.saveAndFlush(new AccountEntry(
+                AccountEntry account = accountRepository.saveAndFlush(new AccountEntry(
                         uid,
                         Role.USER,
                         AccountStatus.ACTIVE,
@@ -53,7 +53,7 @@ public class AccountService {
 
                 log.info("创建了一个匿名账户");
 
-                return entry;
+                return account;
 
             } catch (DataIntegrityViolationException exception){
                 if(!isUidUniqueViolation(exception)){
