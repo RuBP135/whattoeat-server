@@ -167,30 +167,12 @@ public class SecurityConfig {
 
     private ECKey verificationKey(JwtProperties jwtProperties){
 
-        KeyFactory keyFactory;
-
-        try {
-            keyFactory = KeyFactory.getInstance("EC");
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException(
-                    "无法创建EC密匙的factory",
-                    exception);
-        }
-
-        Base64.Decoder decoder = Base64.getDecoder();
-
-        ECPublicKey publicKey;
-
         try{
-            publicKey = (ECPublicKey) keyFactory.generatePublic(
-                    new X509EncodedKeySpec(decoder.decode(jwtProperties.publicKeyBase64()))
-            );
-
-            return new ECKey.Builder(Curve.P_256, publicKey)
+            return new ECKey.Builder(Curve.P_256, publicKey(jwtProperties))
                     .algorithm(JWSAlgorithm.ES256)
                     .build();
 
-        } catch (InvalidKeySpecException | IllegalArgumentException exception){
+        } catch (IllegalArgumentException exception){
             throw new IllegalStateException(
                     "无法获取EC签名密钥",
                     exception
