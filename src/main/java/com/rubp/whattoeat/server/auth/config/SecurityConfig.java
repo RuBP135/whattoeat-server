@@ -63,14 +63,12 @@ public class SecurityConfig {
     @Bean
     public JwtEncoder jwtEncoder(JwtProperties jwtProperties) {
 
-        ECKey key = signingKey(jwtProperties);
-        JWKSet keySet = new JWKSet(key);
+        ECPublicKey publicKey = publicKey(jwtProperties);
+        ECPrivateKey privateKey = privateKey(jwtProperties);
 
-        JWKSource<SecurityContext> jwkSource =
-                (selector, context) ->
-                        selector.select(keySet);
-
-        return new NimbusJwtEncoder(jwkSource);
+        return NimbusJwtEncoder
+                .withKeyPair(publicKey, privateKey)
+                .build();
     }
 
 
@@ -113,9 +111,7 @@ public class SecurityConfig {
         return decoder;
     }
 
-
-
-    private ECKey signingKey(JwtProperties jwtProperties){
+    private ECPublicKey publicKey(JwtProperties jwtProperties){
 
         KeyFactory keyFactory;
 
@@ -129,22 +125,10 @@ public class SecurityConfig {
 
         Base64.Decoder decoder = Base64.getDecoder();
 
-        ECPublicKey publicKey;
-        ECPrivateKey privateKey;
-
         try{
-            publicKey = (ECPublicKey) keyFactory.generatePublic(
+            return (ECPublicKey) keyFactory.generatePublic(
                     new X509EncodedKeySpec(decoder.decode(jwtProperties.publicKeyBase64()))
             );
-
-            privateKey = (ECPrivateKey) keyFactory.generatePrivate(
-                    new PKCS8EncodedKeySpec(decoder.decode(jwtProperties.privateKeyBase64()))
-            );
-
-            return new ECKey.Builder(Curve.P_256, publicKey)
-                    .privateKey(privateKey)
-                    .algorithm(JWSAlgorithm.ES256)
-                    .build();
 
         } catch (InvalidKeySpecException | IllegalArgumentException exception){
             throw new IllegalStateException(
@@ -152,8 +136,33 @@ public class SecurityConfig {
                     exception
             );
         }
+    }
 
+    private ECPrivateKey privateKey(JwtProperties jwtProperties){
 
+        KeyFactory keyFactory;
+
+        try {
+            keyFactory = KeyFactory.getInstance("EC");
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException(
+                    "无法创建EC密匙的factory",
+                    exception);
+        }
+
+        Base64.Decoder decoder = Base64.getDecoder();
+
+        try{
+            return (ECPrivateKey) keyFactory.generatePublic(
+                    new PKCS8EncodedKeySpec(decoder.decode(jwtProperties.privateKeyBase64()))
+            );
+
+        } catch (InvalidKeySpecException | IllegalArgumentException exception){
+            throw new IllegalStateException(
+                    "无法获取EC签名密钥",
+                    exception
+            );
+        }
     }
 
     private ECKey verificationKey(JwtProperties jwtProperties){
