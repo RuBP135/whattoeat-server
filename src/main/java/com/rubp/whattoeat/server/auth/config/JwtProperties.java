@@ -16,7 +16,7 @@ public record JwtProperties (
         @NotNull Duration refreshTokenTtl
 ) {
     public JwtProperties {
-        if(accessTokenTtl != null && !accessTokenTtl().isPositive()){
+        if(accessTokenTtl != null && !accessTokenTtl.isPositive()){
             throw new IllegalStateException(
                     "access token ttl 必须大于零"
             );
