@@ -14,4 +14,18 @@ public record JwtProperties (
         @NotBlank String publicKeyBase64,
         @NotNull Duration accessTokenTtl,
         @NotNull Duration refreshTokenTtl
-) { }
+) {
+    public JwtProperties {
+        if(accessTokenTtl != null && !accessTokenTtl().isPositive()){
+            throw new IllegalStateException(
+                    "access token ttl 必须大于零"
+            );
+        }
+
+        if(refreshTokenTtl != null && !refreshTokenTtl.isPositive()){
+            throw new IllegalStateException(
+                    "refresh token ttl 必须大于零"
+            );
+        }
+    }
+}
