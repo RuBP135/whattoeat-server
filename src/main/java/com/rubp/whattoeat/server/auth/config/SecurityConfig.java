@@ -9,8 +9,9 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.*;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -25,11 +26,78 @@ import java.util.Base64;
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
-    private static final Base64.Decoder decoder = Base64.getDecoder();
+    @Bean
+    public JwtEncoder jwtEncoder(JwtProperties jwtProperties) {
 
-    private static final KeyFactory keyFactory;
+        ECKey key = signingKey(jwtProperties);
 
-    static {
+        JWKSource<SecurityContext> jwkSource =
+                (selector, context) ->
+                        selector.select(new JWKSet(key));
+
+        return new NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
+    public JwtDecoder jwtAccessDecoder(JwtProperties jwtProperties) {
+
+        ECKey key = verificationKey(jwtProperties);
+
+        JWKSource<SecurityContext> jwkSource =
+                (selector, context) ->
+                        selector.select(new JWKSet(key));
+
+        NimbusJwtDecoder decoder = NimbusJwtDecoder
+                .withJwkSource(jwkSource)
+                .jwsAlgorithm(SignatureAlgorithm.ES256)
+                .build();
+
+        decoder.setJwtValidator(
+                new DelegatingOAuth2TokenValidator<>(
+                        JwtValidators.createDefault(),
+                        new JwtClaimValidator<String>(
+                                "token_type",
+                                "ACCESS"::equals
+                        )
+                )
+        );
+
+        return decoder;
+    }
+
+    @Bean
+    public JwtDecoder jwtRefreshDecoder(JwtProperties jwtProperties) {
+
+        ECKey key = verificationKey(jwtProperties);
+
+        JWKSource<SecurityContext> jwkSource =
+                (selector, context) ->
+                        selector.select(new JWKSet(key));
+
+        NimbusJwtDecoder decoder = NimbusJwtDecoder
+                .withJwkSource(jwkSource)
+                .jwsAlgorithm(SignatureAlgorithm.ES256)
+                .build();
+
+        decoder.setJwtValidator(
+                new DelegatingOAuth2TokenValidator<>(
+                        JwtValidators.createDefault(),
+                        new JwtClaimValidator<String>(
+                                "token_type",
+                                "REFRESH"::equals
+                        )
+                )
+        );
+
+        return decoder;
+    }
+
+
+
+    private ECKey signingKey(JwtProperties jwtProperties){
+
+        KeyFactory keyFactory;
+
         try {
             keyFactory = KeyFactory.getInstance("EC");
         } catch (NoSuchAlgorithmException exception) {
@@ -37,29 +105,64 @@ public class SecurityConfig {
                     "无法创建EC密匙的factory",
                     exception);
         }
-    }
 
-    @Bean
-    public JwtEncoder jwtEncoder(JwtProperties jwtProperties) throws InvalidKeySpecException {
+        Base64.Decoder decoder = Base64.getDecoder();
 
-        ECPublicKey publicKey = (ECPublicKey) keyFactory.generatePublic(
-                new X509EncodedKeySpec(decoder.decode(jwtProperties.publicKeyBase64()))
-        );
-        ECPrivateKey privateKey = (ECPrivateKey) keyFactory.generatePrivate(
-                new PKCS8EncodedKeySpec(decoder.decode(jwtProperties.privateKeyBase64()))
-        );
+        ECPublicKey publicKey;
+        ECPrivateKey privateKey;
 
-        ECKey signingKey = new ECKey.Builder(Curve.P_256, publicKey)
+        try{
+            publicKey = (ECPublicKey) keyFactory.generatePublic(
+                    new X509EncodedKeySpec(decoder.decode(jwtProperties.publicKeyBase64()))
+            );
+
+            privateKey = (ECPrivateKey) keyFactory.generatePrivate(
+                    new PKCS8EncodedKeySpec(decoder.decode(jwtProperties.privateKeyBase64()))
+            );
+
+        } catch (InvalidKeySpecException | IllegalArgumentException exception){
+            throw new IllegalStateException(
+                    "无法获取EC签名密钥",
+                    exception
+            );
+        }
+
+        return new ECKey.Builder(Curve.P_256, publicKey)
                 .privateKey(privateKey)
                 .algorithm(JWSAlgorithm.ES256)
                 .build();
-
-        JWKSource<SecurityContext> jwkSource =
-                (selector, context) ->
-                        selector.select(new JWKSet(signingKey));
-
-        return new NimbusJwtEncoder(jwkSource);
     }
 
+    private ECKey verificationKey(JwtProperties jwtProperties){
 
+        KeyFactory keyFactory;
+
+        try {
+            keyFactory = KeyFactory.getInstance("EC");
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException(
+                    "无法创建EC密匙的factory",
+                    exception);
+        }
+
+        Base64.Decoder decoder = Base64.getDecoder();
+
+        ECPublicKey publicKey;
+
+        try{
+            publicKey = (ECPublicKey) keyFactory.generatePublic(
+                    new X509EncodedKeySpec(decoder.decode(jwtProperties.publicKeyBase64()))
+            );
+
+        } catch (InvalidKeySpecException | IllegalArgumentException exception){
+            throw new IllegalStateException(
+                    "无法获取EC签名密钥",
+                    exception
+            );
+        }
+
+        return new ECKey.Builder(Curve.P_256, publicKey)
+                .algorithm(JWSAlgorithm.ES256)
+                .build();
+    }
 }
