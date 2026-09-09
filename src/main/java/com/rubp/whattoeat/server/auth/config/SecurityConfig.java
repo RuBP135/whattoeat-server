@@ -36,7 +36,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder
-    ) {
+    ) throws Exception {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -153,7 +153,7 @@ public class SecurityConfig {
         Base64.Decoder decoder = Base64.getDecoder();
 
         try{
-            return (ECPrivateKey) keyFactory.generatePublic(
+            return (ECPrivateKey) keyFactory.generatePrivate(
                     new PKCS8EncodedKeySpec(decoder.decode(jwtProperties.privateKeyBase64()))
             );
 
