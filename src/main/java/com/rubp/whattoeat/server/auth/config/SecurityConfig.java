@@ -30,49 +30,36 @@ public class SecurityConfig {
     public JwtEncoder jwtEncoder(JwtProperties jwtProperties) {
 
         ECKey key = signingKey(jwtProperties);
+        JWKSet keySet = new JWKSet(key);
 
         JWKSource<SecurityContext> jwkSource =
                 (selector, context) ->
-                        selector.select(new JWKSet(key));
+                        selector.select(keySet);
 
         return new NimbusJwtEncoder(jwkSource);
     }
 
+
     @Bean
     public JwtDecoder jwtAccessDecoder(JwtProperties jwtProperties) {
-
-        ECKey key = verificationKey(jwtProperties);
-
-        JWKSource<SecurityContext> jwkSource =
-                (selector, context) ->
-                        selector.select(new JWKSet(key));
-
-        NimbusJwtDecoder decoder = NimbusJwtDecoder
-                .withJwkSource(jwkSource)
-                .jwsAlgorithm(SignatureAlgorithm.ES256)
-                .build();
-
-        decoder.setJwtValidator(
-                new DelegatingOAuth2TokenValidator<>(
-                        JwtValidators.createDefault(),
-                        new JwtClaimValidator<String>(
-                                "token_type",
-                                "ACCESS"::equals
-                        )
-                )
-        );
-
-        return decoder;
+        return jwtDecoder(jwtProperties, "ACCESS");
     }
 
     @Bean
     public JwtDecoder jwtRefreshDecoder(JwtProperties jwtProperties) {
+        return jwtDecoder(jwtProperties, "REFRESH");
+    }
+
+
+
+    private JwtDecoder jwtDecoder(JwtProperties jwtProperties, String tokenType){
 
         ECKey key = verificationKey(jwtProperties);
+        JWKSet keySet = new JWKSet(key);
 
         JWKSource<SecurityContext> jwkSource =
                 (selector, context) ->
-                        selector.select(new JWKSet(key));
+                        selector.select(keySet);
 
         NimbusJwtDecoder decoder = NimbusJwtDecoder
                 .withJwkSource(jwkSource)
@@ -84,7 +71,7 @@ public class SecurityConfig {
                         JwtValidators.createDefault(),
                         new JwtClaimValidator<String>(
                                 "token_type",
-                                "REFRESH"::equals
+                                tokenType::equals
                         )
                 )
         );
@@ -120,6 +107,11 @@ public class SecurityConfig {
                     new PKCS8EncodedKeySpec(decoder.decode(jwtProperties.privateKeyBase64()))
             );
 
+            return new ECKey.Builder(Curve.P_256, publicKey)
+                    .privateKey(privateKey)
+                    .algorithm(JWSAlgorithm.ES256)
+                    .build();
+
         } catch (InvalidKeySpecException | IllegalArgumentException exception){
             throw new IllegalStateException(
                     "无法获取EC签名密钥",
@@ -127,10 +119,7 @@ public class SecurityConfig {
             );
         }
 
-        return new ECKey.Builder(Curve.P_256, publicKey)
-                .privateKey(privateKey)
-                .algorithm(JWSAlgorithm.ES256)
-                .build();
+
     }
 
     private ECKey verificationKey(JwtProperties jwtProperties){
@@ -154,6 +143,10 @@ public class SecurityConfig {
                     new X509EncodedKeySpec(decoder.decode(jwtProperties.publicKeyBase64()))
             );
 
+            return new ECKey.Builder(Curve.P_256, publicKey)
+                    .algorithm(JWSAlgorithm.ES256)
+                    .build();
+
         } catch (InvalidKeySpecException | IllegalArgumentException exception){
             throw new IllegalStateException(
                     "无法获取EC签名密钥",
@@ -161,8 +154,5 @@ public class SecurityConfig {
             );
         }
 
-        return new ECKey.Builder(Curve.P_256, publicKey)
-                .algorithm(JWSAlgorithm.ES256)
-                .build();
     }
 }
