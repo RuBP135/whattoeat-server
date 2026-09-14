@@ -52,9 +52,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/auth/anonymous",
-                                "/auth/refresh",
-                                "/auth/logout"
+                                "/api/auth/anonymous",
+                                "/api/auth/refresh"
                         ).permitAll().anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
