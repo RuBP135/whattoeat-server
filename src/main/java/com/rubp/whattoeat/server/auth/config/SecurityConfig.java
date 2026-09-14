@@ -6,12 +6,15 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.rubp.whattoeat.server.web.error.ErrorResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,6 +22,7 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +42,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
-            @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder
+            @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder,
+            ObjectMapper objectMapper
     ) {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
@@ -57,6 +62,18 @@ public class SecurityConfig {
                         ).permitAll().anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
+                        .authenticationEntryPoint((request, response, exception) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(
+                                            "INVALID_ACCESS_TOKEN",
+                                            "access token 无效或已过期"
+                                    )
+                            );
+                        })
                         .jwt(jwt -> jwt.decoder(jwtAccessDecoder))
                 )
                 .build();
