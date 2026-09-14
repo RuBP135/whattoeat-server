@@ -30,7 +30,7 @@ public class AccountServiceTest {
         when(accountRepository.saveAndFlush(any(AccountEntry.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        AccountEntry account = accountService.createAnonymousAccount();
+        AccountEntry account = accountService.createAnonymousAccountEntry();
 
         assertNotNull(account);
         assertTrue(account.getUid().matches("\\d{10}"));
@@ -48,7 +48,7 @@ public class AccountServiceTest {
         when(accountRepository.saveAndFlush(any(AccountEntry.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        AccountEntry account = accountService.createAnonymousAccount();
+        AccountEntry account = accountService.createAnonymousAccountEntry();
 
         verify(accountRepository, times(2)).existsByUid(anyString());
         verify(accountRepository, times(1)).saveAndFlush(any(AccountEntry.class));
@@ -64,7 +64,7 @@ public class AccountServiceTest {
 
         assertThrows(
                 UniqueUidGenerateException.class,
-                accountService::createAnonymousAccount
+                accountService::createAnonymousAccountEntry
         );
 
         verify(accountRepository, times(ATTEMPT_LIMIT)).existsByUid(anyString());
@@ -84,7 +84,7 @@ public class AccountServiceTest {
                 exception,
                 assertThrows(
                         DataIntegrityViolationException.class,
-                        accountService::createAnonymousAccount
+                        accountService::createAnonymousAccountEntry
                 )
         );
 
@@ -112,7 +112,7 @@ public class AccountServiceTest {
                 .thenThrow(exception)
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        AccountEntry account = accountService.createAnonymousAccount();
+        AccountEntry account = accountService.createAnonymousAccountEntry();
 
         verify(accountRepository, times(2)).existsByUid(anyString());
         verify(accountRepository, times(2)).saveAndFlush(any(AccountEntry.class));

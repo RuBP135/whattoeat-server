@@ -34,7 +34,7 @@ public class AccountService {
     }
 
 
-    public AccountEntry createAnonymousAccount() {
+    public AccountEntry createAnonymousAccountEntry() {
 
         log.info("正在创建匿名账户");
 
