@@ -39,6 +39,9 @@ build/
 .claude/worktrees/
 .claude/*.log
 
+### codex ###
+.codex/config.toml
+
 ### env ###
 .env
 .env.*
