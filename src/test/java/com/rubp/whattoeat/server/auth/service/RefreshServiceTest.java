@@ -86,8 +86,7 @@ public class RefreshServiceTest {
         when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(uid);
 
-        AccountUnavailableException accountUnavailableException = new AccountUnavailableException();
-        when(accountRepository.existsByUid(uid)).thenThrow(accountUnavailableException);
+        when(accountRepository.findByUid(uid)).thenReturn(Optional.empty());
 
         assertThrows(
                 AccountUnavailableException.class,
