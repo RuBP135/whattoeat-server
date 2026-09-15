@@ -3,6 +3,7 @@ package com.rubp.whattoeat.server.auth.service;
 import com.rubp.whattoeat.server.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.auth.model.JwtTokenType;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -25,7 +26,7 @@ public class JwtTokenServiceTest {
 
     private final JwtTokenService jwtTokenService;
 
-
+    @Autowired
     public JwtTokenServiceTest(
             JwtEncoder jwtEncoder,
             @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder,
