@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +49,7 @@ public class JwtTokenServiceTest {
     @Test
     public void createToken_shouldCreateValidToken() {
         String uid = "1234567890";
-        Instant now = Instant.now(clock);
+        Instant now = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS);
         Instant accessExpiresAt = now.plus(jwtProperties.accessTokenTtl());
         Instant refreshExpiresAt = now.plus(jwtProperties.refreshTokenTtl());
 
