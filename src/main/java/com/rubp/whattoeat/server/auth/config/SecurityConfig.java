@@ -1,5 +1,6 @@
 package com.rubp.whattoeat.server.auth.config;
 
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
@@ -185,11 +186,17 @@ public class SecurityConfig {
         try{
             return new ECKey.Builder(Curve.P_256, publicKey(jwtProperties))
                     .algorithm(JWSAlgorithm.ES256)
+                    .keyIDFromThumbprint()
                     .build();
 
+        } catch (JOSEException exception){
+            throw new IllegalStateException(
+                    "无法计算 EC JWK 指纹以生成 kid",
+                    exception
+            );
         } catch (IllegalArgumentException exception){
             throw new IllegalStateException(
-                    "无法获取 EC 签名验证公钥",
+                    "构建 EC 验签密钥时参数不合法",
                     exception
             );
         }
