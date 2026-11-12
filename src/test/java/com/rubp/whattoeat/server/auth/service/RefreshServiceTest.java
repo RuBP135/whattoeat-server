@@ -9,6 +9,9 @@ import com.rubp.whattoeat.server.auth.model.JwtTokenType;
 import com.rubp.whattoeat.server.auth.model.RefreshAccessTokenRequest;
 import com.rubp.whattoeat.server.auth.model.RefreshAccessTokenResponse;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -32,25 +35,24 @@ public class RefreshServiceTest {
     );
 
 
-    @Test
-    public void refreshAccessToken_shouldCreateAccessTokenForActiveAccount() {
+    @ParameterizedTest
+    @ValueSource(longs = {123L, Long.MAX_VALUE})
+    public void refreshAccessToken_shouldCreateAccessTokenForActiveAccount(long id) {
         String refreshToken = "refresh-token";
-        String uid = "1234567890";
         String accessToken = "access-token";
 
         Jwt jwt = mock(Jwt.class);
-        when(jwt.getSubject()).thenReturn(uid);
+        when(jwt.getSubject()).thenReturn(Long.toString(id));
         when(jwtRefreshDecoder.decode(anyString())).thenReturn(jwt);
 
         AccountEntry account = new AccountEntry(
-                uid,
                 Role.USER,
                 AccountStatus.ACTIVE,
                 Instant.now()
         );
 
-        when(accountRepository.findByUid(uid)).thenReturn(Optional.of(account));
-        when(jwtTokenService.createToken(uid, JwtTokenType.ACCESS)).thenReturn(accessToken);
+        when(accountRepository.findById(id)).thenReturn(Optional.of(account));
+        when(jwtTokenService.createToken(id, JwtTokenType.ACCESS)).thenReturn(accessToken);
 
         RefreshAccessTokenResponse response =
                 refreshService.refreshAccessToken(new RefreshAccessTokenRequest(refreshToken));
@@ -58,8 +60,25 @@ public class RefreshServiceTest {
         assertEquals(accessToken, response.accessToken());
 
         verify(jwtRefreshDecoder).decode(refreshToken);
-        verify(accountRepository).findByUid(uid);
-        verify(jwtTokenService).createToken(uid, JwtTokenType.ACCESS);
+        verify(accountRepository).findById(id);
+        verify(jwtTokenService).createToken(id, JwtTokenType.ACCESS);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "invalid-id", "9223372036854775808", "0", "-1"})
+    public void refreshAccessToken_shouldRejectInvalidAccountId(String subject) {
+        String refreshToken = "refresh-token";
+        Jwt jwt = mock(Jwt.class);
+        when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
+        when(jwt.getSubject()).thenReturn(subject);
+
+        assertThrows(
+                JwtException.class,
+                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(refreshToken))
+        );
+
+        verifyNoInteractions(accountRepository, jwtTokenService);
     }
 
     @Test
@@ -78,15 +97,15 @@ public class RefreshServiceTest {
     }
 
     @Test
-    public void refreshAccessToken_shouldThrowWhenUidNotExist() {
+    public void refreshAccessToken_shouldThrowWhenIdNotExist() {
         String refreshToken = "refresh-token";
-        String uid = "1234567890";
+        long id = 123L;
 
         Jwt jwt = mock(Jwt.class);
         when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
-        when(jwt.getSubject()).thenReturn(uid);
+        when(jwt.getSubject()).thenReturn(Long.toString(id));
 
-        when(accountRepository.findByUid(uid)).thenReturn(Optional.empty());
+        when(accountRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(
                 AccountUnavailableException.class,
@@ -97,20 +116,19 @@ public class RefreshServiceTest {
     @Test
     public void refreshAccessToken_shouldThrowWhenAccountDisabled() {
         String refreshToken = "refresh-token";
-        String uid = "1234567890";
+        long id = 123L;
 
         Jwt jwt = mock(Jwt.class);
         when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
-        when(jwt.getSubject()).thenReturn(uid);
+        when(jwt.getSubject()).thenReturn(Long.toString(id));
 
         AccountEntry account = new AccountEntry(
-                uid,
                 Role.USER,
                 AccountStatus.DISABLED,
                 Instant.now()
         );
 
-        when(accountRepository.findByUid(uid)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(id)).thenReturn(Optional.of(account));
 
         assertThrows(
                 AccountUnavailableException.class,

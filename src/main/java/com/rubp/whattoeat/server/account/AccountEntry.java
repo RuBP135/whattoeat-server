@@ -7,23 +7,12 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "account",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "unique_account_uid",
-                        columnNames = "uid"
-                )
-        }
-)
+@Table(name = "account")
 public class AccountEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, updatable = false, length = 10)
-    private String uid;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false, length = 10)
@@ -39,8 +28,7 @@ public class AccountEntry {
 
     protected AccountEntry() { }
 
-    public AccountEntry(String uid, Role role, AccountStatus status, Instant createdAt) {
-        this.uid = uid;
+    public AccountEntry(Role role, AccountStatus status, Instant createdAt) {
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;
@@ -58,10 +46,6 @@ public class AccountEntry {
 
     public Long getId() {
         return id;
-    }
-
-    public String getUid() {
-        return uid;
     }
 
     public Role getRole() {

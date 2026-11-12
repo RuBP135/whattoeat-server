@@ -10,6 +10,7 @@ import com.rubp.whattoeat.server.auth.model.RefreshAccessTokenResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -33,16 +34,24 @@ public class RefreshService {
     public RefreshAccessTokenResponse refreshAccessToken(RefreshAccessTokenRequest request){
         Jwt refreshToken = jwtRefreshDecoder.decode(request.refreshToken());
 
-        String uid = refreshToken.getSubject();
+        long id;
+        try {
+            id = Long.parseLong(refreshToken.getSubject());
+        } catch (NumberFormatException exception) {
+            throw new JwtException("refresh token 的账户 id 无效", exception);
+        }
+        if(id <= 0){
+            throw new JwtException("refresh token 的账户 id 无效");
+        }
 
-        AccountEntry account = accountRepository.findByUid(uid)
+        AccountEntry account = accountRepository.findById(id)
                 .orElseThrow(AccountUnavailableException::new);
 
         if(account.getStatus() == AccountStatus.DISABLED){
             throw new AccountUnavailableException();
         }
 
-        String accessToken = jwtTokenService.createToken(uid, JwtTokenType.ACCESS);
+        String accessToken = jwtTokenService.createToken(id, JwtTokenType.ACCESS);
 
         return new RefreshAccessTokenResponse(accessToken);
     }

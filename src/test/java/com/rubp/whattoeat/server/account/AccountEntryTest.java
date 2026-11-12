@@ -14,7 +14,6 @@ public class AccountEntryTest {
     @Test
     public void activateShouldSetStatusToActive() {
         AccountEntry account = new AccountEntry(
-                "1234567899",
                 Role.USER,
                 AccountStatus.DISABLED,
                 Instant.now()
@@ -34,7 +33,6 @@ public class AccountEntryTest {
     @Test
     public void disableShouldSetStatusToDisable() {
         AccountEntry account = new AccountEntry(
-                "1234567899",
                 Role.USER,
                 AccountStatus.ACTIVE,
                 Instant.now()

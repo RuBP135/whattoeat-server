@@ -31,7 +31,7 @@ public class JwtTokenService {
         this.clock = clock;
     }
 
-    public String createToken(String uid, JwtTokenType type){
+    public String createToken(long id, JwtTokenType type){
 
         Instant now = Instant.now(clock);
 
@@ -41,7 +41,7 @@ public class JwtTokenService {
         };
 
         JwtClaimsSet claimsSet = JwtClaimsSet.builder()
-                .subject(uid)
+                .subject(Long.toString(id))
                 .issuedAt(now)
                 .expiresAt(now.plus(ttl))
                 .claim("token_type", type.name())
