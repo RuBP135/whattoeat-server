@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.core.error;
+package com.rubp.whattoeat.server.core.web.error;
 
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import org.springframework.http.HttpStatus;
