@@ -25,6 +25,9 @@ import static org.mockito.Mockito.*;
 
 public class RefreshServiceTest {
 
+    private static final String USERNAME = "test-user";
+    private static final String PASSWORD_HASH = "encoded-password-hash";
+
     private final JwtDecoder jwtRefreshDecoder = mock(JwtDecoder.class);
     private final JwtTokenService jwtTokenService = mock(JwtTokenService.class);
     private final AccountRepository accountRepository = mock(AccountRepository.class);
@@ -46,6 +49,8 @@ public class RefreshServiceTest {
         when(jwtRefreshDecoder.decode(anyString())).thenReturn(jwt);
 
         AccountEntry account = new AccountEntry(
+                USERNAME,
+                PASSWORD_HASH,
                 Role.USER,
                 AccountStatus.ACTIVE,
                 Instant.now()
@@ -66,7 +71,7 @@ public class RefreshServiceTest {
 
     @ParameterizedTest
     @NullSource
-    @ValueSource(strings = {"", "invalid-id", "9223372036854775808", "0", "-1"})
+    @ValueSource(strings = {"", "str", "9223372036854775808", "0", "-1"})
     public void refreshAccessToken_shouldRejectInvalidAccountId(String subject) {
         String refreshToken = "refresh-token";
         Jwt jwt = mock(Jwt.class);
@@ -123,6 +128,8 @@ public class RefreshServiceTest {
         when(jwt.getSubject()).thenReturn(Long.toString(id));
 
         AccountEntry account = new AccountEntry(
+                USERNAME,
+                PASSWORD_HASH,
                 Role.USER,
                 AccountStatus.DISABLED,
                 Instant.now()
