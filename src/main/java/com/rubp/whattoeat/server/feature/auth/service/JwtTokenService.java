@@ -6,6 +6,7 @@ import com.rubp.whattoeat.server.feature.auth.exception.TokenIssuanceException;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -36,7 +37,11 @@ public class JwtTokenService {
         this.clock = clock;
     }
 
-    public String createToken(long id, JwtTokenType type){
+    public String createToken(long id, JwtTokenType type) {
+        return createJwt(id, type).getTokenValue();
+    }
+
+    public Jwt createJwt(long id, JwtTokenType type) {
         try {
             Instant now = Instant.now(clock);
 
@@ -58,8 +63,7 @@ public class JwtTokenService {
                     .build();
 
             return jwtEncoder
-                    .encode(JwtEncoderParameters.from(header, claimsSet))
-                    .getTokenValue();
+                    .encode(JwtEncoderParameters.from(header, claimsSet));
         } catch (Exception exception) {
             throw new TokenIssuanceException(exception);
         }
