@@ -6,9 +6,12 @@ import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.model.CreateAccountRequest;
 import com.rubp.whattoeat.server.feature.account.model.CreateAccountResponse;
 import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
+import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,17 +22,20 @@ import java.time.Instant;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
     private final Clock clock;
 
     public AccountService(
             AccountRepository accountRepository,
+            RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenService jwtTokenService,
             Clock clock
     ) {
         this.accountRepository = accountRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenService = jwtTokenService;
         this.clock = clock;
@@ -49,7 +55,13 @@ public class AccountService {
 
         long id = account.getId();
         String accessToken = jwtTokenService.createToken(id, JwtTokenType.ACCESS);
-        String refreshToken = jwtTokenService.createToken(id, JwtTokenType.REFRESH);
+        Jwt refreshJwt = jwtTokenService.createJwt(id, JwtTokenType.REFRESH);
+        String refreshToken = refreshJwt.getTokenValue();
+
+        String refreshTokenHash = jwtTokenService.hashRefreshToken(refreshToken);
+        Instant expiresAt = refreshJwt.getExpiresAt();
+
+        refreshTokenRepository.save(new RefreshTokenEntry(account, refreshTokenHash, expiresAt));
 
         return new CreateAccountResponse(accessToken, refreshToken);
     }
