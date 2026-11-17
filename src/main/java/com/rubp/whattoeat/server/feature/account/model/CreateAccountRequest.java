@@ -1,6 +1,8 @@
 package com.rubp.whattoeat.server.feature.account.model;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record CreateAccountRequest(
-        String username,
-        String password
+        @NotBlank String username,
+        @NotBlank String password
 ) { }
