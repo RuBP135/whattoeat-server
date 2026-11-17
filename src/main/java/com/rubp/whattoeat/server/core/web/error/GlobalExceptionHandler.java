@@ -21,8 +21,8 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleDataAccessFailure(DataAccessException exception) {
         log.error("数据库访问失败", exception);
         return new ErrorResponse(
-                "DATABASE_ACCESS_FAILED",
-                "数据库访问失败"
+                "INTERNAL_SERVER_ERROR",
+                "服务器内部错误"
         );
     }
 
@@ -31,8 +31,8 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleTransactionFailure(TransactionException exception) {
         log.error("事务处理失败", exception);
         return new ErrorResponse(
-                "TRANSACTION_FAILED",
-                "事务处理失败"
+                "INTERNAL_SERVER_ERROR",
+                "服务器内部错误"
         );
     }
 
