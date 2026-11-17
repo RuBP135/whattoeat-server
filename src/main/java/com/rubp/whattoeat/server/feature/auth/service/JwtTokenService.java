@@ -2,6 +2,7 @@ package com.rubp.whattoeat.server.feature.auth.service;
 
 
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
+import com.rubp.whattoeat.server.feature.auth.exception.TokenIssuanceException;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -32,28 +33,31 @@ public class JwtTokenService {
     }
 
     public String createToken(long id, JwtTokenType type){
+        try {
+            Instant now = Instant.now(clock);
 
-        Instant now = Instant.now(clock);
+            Duration ttl = switch (type){
+                case ACCESS -> jwtProperties.accessTokenTtl();
+                case REFRESH -> jwtProperties.refreshTokenTtl();
+            };
 
-        Duration ttl = switch (type){
-            case ACCESS -> jwtProperties.accessTokenTtl();
-            case REFRESH -> jwtProperties.refreshTokenTtl();
-        };
+            JwtClaimsSet claimsSet = JwtClaimsSet.builder()
+                    .subject(Long.toString(id))
+                    .issuedAt(now)
+                    .expiresAt(now.plus(ttl))
+                    .claim("token_type", type.name())
+                    .build();
 
-        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
-                .subject(Long.toString(id))
-                .issuedAt(now)
-                .expiresAt(now.plus(ttl))
-                .claim("token_type", type.name())
-                .build();
+            JwsHeader header = JwsHeader
+                    .with(SignatureAlgorithm.ES256)
+                    .type("JWT")
+                    .build();
 
-        JwsHeader header = JwsHeader
-                .with(SignatureAlgorithm.ES256)
-                .type("JWT")
-                .build();
-
-        return jwtEncoder
-                .encode(JwtEncoderParameters.from(header, claimsSet))
-                .getTokenValue();
+            return jwtEncoder
+                    .encode(JwtEncoderParameters.from(header, claimsSet))
+                    .getTokenValue();
+        } catch (Exception exception) {
+            throw new TokenIssuanceException(exception);
+        }
     }
 }
