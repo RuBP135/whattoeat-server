@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.TransactionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -22,6 +23,16 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(
                 "DATABASE_ACCESS_FAILED",
                 "数据库访问失败"
+        );
+    }
+
+    @ExceptionHandler(TransactionException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleTransactionFailure(TransactionException exception) {
+        log.error("事务处理失败", exception);
+        return new ErrorResponse(
+                "TRANSACTION_FAILED",
+                "事务处理失败"
         );
     }
 
