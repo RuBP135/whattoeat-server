@@ -11,9 +11,13 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
 
 @Service
 public class JwtTokenService {
@@ -58,6 +62,17 @@ public class JwtTokenService {
                     .getTokenValue();
         } catch (Exception exception) {
             throw new TokenIssuanceException(exception);
+        }
+    }
+
+    public String hashRefreshToken(String refreshToken) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(refreshToken.getBytes(StandardCharsets.UTF_8));
+
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("无法使用 SHA-256 哈希算法", exception);
         }
     }
 }
