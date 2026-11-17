@@ -1,6 +1,5 @@
 package com.rubp.whattoeat.server.core.web.error;
 
-import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,15 +25,6 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(
                 "INVALID_REQUEST",
                 "请求体格式无效"
-        );
-    }
-
-    @ExceptionHandler(AccountUnavailableException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ErrorResponse handleUnavailableAccount(){
-        return new ErrorResponse(
-                "ACCOUNT_UNAVAILABLE",
-                "当前账号不可用"
         );
     }
 }
