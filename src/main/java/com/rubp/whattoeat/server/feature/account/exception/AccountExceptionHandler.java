@@ -19,4 +19,13 @@ public class AccountExceptionHandler {
                 "当前账号不可用"
         );
     }
+
+    @ExceptionHandler(InvalidInvitationCodeException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidInvitationCode() {
+        return new ErrorResponse(
+                "INVALID_INVITATION_CODE",
+                "邀请码无效、已过期或已使用"
+        );
+    }
 }

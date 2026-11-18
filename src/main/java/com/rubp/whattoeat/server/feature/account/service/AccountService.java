@@ -2,6 +2,7 @@ package com.rubp.whattoeat.server.feature.account.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
+import com.rubp.whattoeat.server.feature.account.exception.InvalidInvitationCodeException;
 import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.model.CreateAccountRequest;
 import com.rubp.whattoeat.server.feature.account.model.CreateAccountResponse;
@@ -10,6 +11,7 @@ import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
+import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.time.Instant;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final InvitationService invitationService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
@@ -29,12 +32,14 @@ public class AccountService {
 
     public AccountService(
             AccountRepository accountRepository,
+            InvitationService invitationService,
             RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenService jwtTokenService,
             Clock clock
     ) {
         this.accountRepository = accountRepository;
+        this.invitationService = invitationService;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenService = jwtTokenService;
@@ -43,6 +48,10 @@ public class AccountService {
 
     @Transactional
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
+        if (!invitationService.consumeInvitation(request.invitationCode())) {
+            throw new InvalidInvitationCodeException();
+        }
+
         String passwordHash = passwordEncoder.encode(request.password());
 
         Role role = Role.USER;

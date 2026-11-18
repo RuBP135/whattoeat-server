@@ -11,6 +11,8 @@ import com.rubp.whattoeat.server.feature.auth.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
+import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
+import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,12 +32,14 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,12 +50,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = AccountController.class, properties = "spring.profiles.active=test")
-@Import({AccountService.class, JwtTokenService.class, PasswordConfig.class, SecurityConfig.class})
+@Import({AccountService.class, InvitationService.class, JwtTokenService.class, PasswordConfig.class, SecurityConfig.class})
 public class AccountControllerTest {
 
     private static final long ACCOUNT_ID = 123L;
     private static final String USERNAME = "user";
     private static final String PASSWORD = "password";
+    private static final String INVITATION_CODE = "AAECAwQFBgcICQoLDA0ODw";
 
     @Autowired
     private MockMvc mockMvc;
@@ -77,6 +82,9 @@ public class AccountControllerTest {
     private AccountRepository repository;
 
     @MockitoBean
+    private InvitationRepository invitationRepository;
+
+    @MockitoBean
     private RefreshTokenRepository refreshTokenRepository;
 
     @DynamicPropertySource
@@ -89,15 +97,15 @@ public class AccountControllerTest {
     @Test
     public void createAccount_shouldSaveAccountAndReturnSignedTokensWithoutAuthentication() throws Exception {
 
+        byte[] code = Base64.getUrlDecoder().decode(INVITATION_CODE);
+        when(invitationRepository.deleteValidInvitation(code, Instant.now(clock))).thenReturn(1);
         when(repository.save(any(AccountEntry.class))).thenAnswer(invocation -> {
             AccountEntry account = invocation.getArgument(0);
             ReflectionTestUtils.setField(account, "id", ACCOUNT_ID);
             return account;
         });
 
-        var result = mockMvc.perform(post("/api/accounts")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(new CreateAccountRequest(USERNAME, PASSWORD))))
+        var result = createAccount(INVITATION_CODE)
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.password").doesNotExist())
@@ -131,6 +139,22 @@ public class AccountControllerTest {
     }
 
     @Test
+    public void createAccount_shouldRejectUnknownInvitationCode() throws Exception {
+        String unknownInvitationCode = "AAAAAAAAAAAAAAAAAAAAAA";
+        byte[] code = Base64.getUrlDecoder().decode(unknownInvitationCode);
+        Instant now = Instant.now(clock);
+        when(invitationRepository.deleteValidInvitation(code, now)).thenReturn(0);
+
+        createAccount(unknownInvitationCode)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INVITATION_CODE"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
+
+        verify(invitationRepository).deleteValidInvitation(code, now);
+        verifyNoInteractions(repository, refreshTokenRepository);
+    }
+
+    @Test
     public void createAccount_shouldRejectInvalidAccessToken() throws Exception {
         mockMvc.perform(post("/api/accounts")
                         .header("Authorization", "Bearer invalid-token"))
@@ -138,6 +162,12 @@ public class AccountControllerTest {
                 .andExpect(jsonPath("$.code").value("INVALID_ACCESS_TOKEN"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
         verifyNoInteractions(repository);
+    }
+
+    private ResultActions createAccount(String invitationCode) throws Exception {
+        return mockMvc.perform(post("/api/accounts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(new CreateAccountRequest(USERNAME, PASSWORD, invitationCode))));
     }
 
     @TestConfiguration(proxyBeanMethods = false)

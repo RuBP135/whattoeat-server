@@ -5,6 +5,8 @@ import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import com.rubp.whattoeat.server.feature.invitation.domain.InvitationCodeGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -44,5 +46,20 @@ public class InvitationService {
         ));
 
         return code;
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean consumeInvitation(String invitationCode) {
+        byte[] code;
+        try {
+            code = Base64.getUrlDecoder().decode(invitationCode);
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+        if (!Base64.getUrlEncoder().withoutPadding().encodeToString(code).equals(invitationCode)) {
+            return false;
+        }
+
+        return invitationRepository.deleteValidInvitation(code, Instant.now(clock)) == 1;
     }
 }
