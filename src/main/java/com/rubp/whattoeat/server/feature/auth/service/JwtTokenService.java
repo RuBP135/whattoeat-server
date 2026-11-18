@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -50,23 +51,39 @@ public class JwtTokenService {
                 case REFRESH -> jwtProperties.refreshTokenTtl();
             };
 
-            JwtClaimsSet claimsSet = JwtClaimsSet.builder()
-                    .subject(Long.toString(id))
-                    .issuedAt(now)
-                    .expiresAt(now.plus(ttl))
-                    .claim("token_type", type.name())
-                    .build();
-
-            JwsHeader header = JwsHeader
-                    .with(SignatureAlgorithm.ES256)
-                    .type("JWT")
-                    .build();
-
-            return jwtEncoder
-                    .encode(JwtEncoderParameters.from(header, claimsSet));
+            return encodeJwt(id, type, now, now.plus(ttl));
         } catch (Exception exception) {
             throw new TokenIssuanceException(exception);
         }
+    }
+
+    public String createRefreshToken(long id, Instant expiresAt) {
+        Instant now = Instant.now(clock);
+        if (expiresAt == null || !expiresAt.isAfter(now)) {
+            throw new JwtException("refresh token 无效或已过期");
+        }
+
+        try {
+            return encodeJwt(id, JwtTokenType.REFRESH, now, expiresAt).getTokenValue();
+        } catch (Exception exception) {
+            throw new TokenIssuanceException(exception);
+        }
+    }
+
+    private Jwt encodeJwt(long id, JwtTokenType type, Instant issuedAt, Instant expiresAt) {
+        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
+                .subject(Long.toString(id))
+                .issuedAt(issuedAt)
+                .expiresAt(expiresAt)
+                .claim("token_type", type.name())
+                .build();
+
+        JwsHeader header = JwsHeader
+                .with(SignatureAlgorithm.ES256)
+                .type("JWT")
+                .build();
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claimsSet));
     }
 
     public String hashRefreshToken(String refreshToken) {
