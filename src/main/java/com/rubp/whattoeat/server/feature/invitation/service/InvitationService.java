@@ -33,7 +33,7 @@ public class InvitationService {
             @Value("${invitation.ttl}") Duration ttl
     ) {
         if(ttl == null || !ttl.isPositive()){
-            throw new IllegalArgumentException("邀请码有效期必须大于零");
+            throw new IllegalArgumentException("Invitation code TTL must be greater than zero");
         }
 
         this.invitationRepository = invitationRepository;
@@ -73,7 +73,7 @@ public class InvitationService {
     public void cleanupExpiredInvitations() {
         int deletedCount = invitationRepository.deleteExpiredInvitations(Instant.now(clock));
         if (deletedCount > 0) {
-            log.info("清理了 {} 条过期邀请码", deletedCount);
+            log.info("Deleted {} expired invitation codes", deletedCount);
         }
     }
 }

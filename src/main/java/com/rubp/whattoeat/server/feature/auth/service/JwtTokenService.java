@@ -62,7 +62,7 @@ public class JwtTokenService {
     public String createRefreshToken(long id, Role role, Instant expiresAt) {
         Instant now = Instant.now(clock);
         if (expiresAt == null || !expiresAt.isAfter(now)) {
-            throw new JwtException("refresh token 无效或已过期");
+            throw new JwtException("Refresh token is invalid or has expired");
         }
 
         try {
@@ -79,7 +79,7 @@ public class JwtTokenService {
 
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("无法使用 SHA-256 哈希算法", exception);
+            throw new IllegalStateException("SHA-256 hashing is unavailable", exception);
         }
     }
 

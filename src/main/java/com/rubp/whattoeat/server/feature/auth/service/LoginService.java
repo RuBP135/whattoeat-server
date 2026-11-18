@@ -21,7 +21,7 @@ import java.time.Instant;
 @Service
 public class LoginService {
 
-    private static final String INVALID_CREDENTIALS_MESSAGE = "用户名或密码错误";
+    private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid username or password";
 
     private final JwtTokenService jwtTokenService;
     private final AccountRepository accountRepository;

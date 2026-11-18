@@ -27,7 +27,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleUnexpectedFailure(Exception exception) {
-        log.error("未预期的异常", exception);
+        log.error("Unexpected exception", exception);
         return new ErrorResponse(
                 "INTERNAL_SERVER_ERROR",
                 "服务器内部错误"
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             WebRequest request
     ) {
         if (statusCode.is5xxServerError()) {
-            log.error("请求处理失败", exception);
+            log.error("Failed to process request", exception);
             body = new ErrorResponse("INTERNAL_SERVER_ERROR", "服务器内部错误");
         } else if (!(body instanceof ErrorResponse)) {
             HttpStatus status = HttpStatus.resolve(statusCode.value());

@@ -21,7 +21,7 @@ public class AuthExceptionHandler {
     @ExceptionHandler(TokenIssuanceException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleTokenIssuanceFailure(TokenIssuanceException exception) {
-        log.error("token 签发失败", exception);
+        log.error("Failed to issue token", exception);
         return new ErrorResponse(
                 "TOKEN_ISSUANCE_FAILED",
                 "token 签发失败"

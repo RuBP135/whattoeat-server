@@ -18,13 +18,13 @@ public record JwtProperties (
     public JwtProperties {
         if(accessTokenTtl != null && !accessTokenTtl.isPositive()){
             throw new IllegalStateException(
-                    "access token ttl 必须大于零"
+                    "Access token TTL must be greater than zero"
             );
         }
 
         if(refreshTokenTtl != null && !refreshTokenTtl.isPositive()){
             throw new IllegalStateException(
-                    "refresh token ttl 必须大于零"
+                    "Refresh token TTL must be greater than zero"
             );
         }
     }

@@ -48,26 +48,26 @@ public class RefreshService {
 
         String oldHash = jwtTokenService.hashRefreshToken(oldRefreshToken);
         RefreshTokenEntry entry = refreshTokenRepository.findByRefreshTokenHash(oldHash)
-                .orElseThrow(() -> new JwtException("refresh token 无效或已过期"));
+                .orElseThrow(() -> new JwtException("Refresh token is invalid or has expired"));
 
         AccountEntry account = entry.getAccount();
         long id = account.getId();
         Role role = account.getRole();
         if (!Long.toString(id).equals(oldRefreshJwt.getSubject())) {
-            throw new JwtException("refresh token 的账户 id 与记录不匹配");
+            throw new JwtException("Refresh token subject does not match the stored account ID");
         }
         if (account.getStatus() != AccountStatus.ACTIVE) {
             throw new AccountUnavailableException();
         }
 
-        Instant expiresAt = Objects.requireNonNull(oldRefreshJwt.getExpiresAt(), "解码后的 refresh token 必须包含 exp");
+        Instant expiresAt = Objects.requireNonNull(oldRefreshJwt.getExpiresAt(), "Decoded refresh token must contain the exp claim");
         String newRefreshToken = jwtTokenService.createRefreshToken(id, role, expiresAt);
         String accessToken = jwtTokenService.createToken(id, role, JwtTokenType.ACCESS);
         String newHash = jwtTokenService.hashRefreshToken(newRefreshToken);
 
         Instant now = Instant.now(clock);
         if (!expiresAt.isAfter(now) || refreshTokenRepository.replaceRefreshTokenHash(oldHash, newHash, now) != 1) {
-            throw new JwtException("refresh token 无效或已过期");
+            throw new JwtException("Refresh token is invalid or has expired");
         }
 
         return new RefreshAccessTokenResponse(accessToken, newRefreshToken);

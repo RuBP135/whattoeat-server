@@ -138,7 +138,7 @@ public class SecurityConfig {
         var defaultConverter = MappedJwtClaimSetConverter.withDefaults(Map.of());
         decoder.setClaimSetConverter(claims -> {
             if (claims.get(JwtClaimNames.IAT) == null) {
-                throw new BadJwtException("JWT 缺少 iat");
+                throw new BadJwtException("JWT is missing the iat claim");
             }
             return defaultConverter.convert(claims);
         });
@@ -167,7 +167,7 @@ public class SecurityConfig {
             keyFactory = KeyFactory.getInstance("EC");
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException(
-                    "无法创建 EC 密钥工厂",
+                    "Failed to create EC key factory",
                     exception);
         }
 
@@ -178,7 +178,7 @@ public class SecurityConfig {
 
         } catch (InvalidKeySpecException exception){
             throw new IllegalStateException(
-                    "无法解析 EC 公钥",
+                    "Failed to parse EC public key",
                     exception
             );
         }
@@ -192,7 +192,7 @@ public class SecurityConfig {
             keyFactory = KeyFactory.getInstance("EC");
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException(
-                    "无法创建 EC 密钥工厂",
+                    "Failed to create EC key factory",
                     exception);
         }
 
@@ -203,7 +203,7 @@ public class SecurityConfig {
 
         } catch (InvalidKeySpecException exception){
             throw new IllegalStateException(
-                    "无法解析 EC 私钥",
+                    "Failed to parse EC private key",
                     exception
             );
         }
@@ -219,12 +219,12 @@ public class SecurityConfig {
 
         } catch (JOSEException exception){
             throw new IllegalStateException(
-                    "无法计算 EC JWK 指纹以生成 kid",
+                    "Failed to compute EC JWK thumbprint to generate kid",
                     exception
             );
         } catch (IllegalArgumentException exception){
             throw new IllegalStateException(
-                    "构建 EC 验签密钥时参数不合法",
+                    "Invalid parameters for the EC verification key",
                     exception
             );
         }
@@ -240,7 +240,7 @@ public class SecurityConfig {
                     .trim();
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "无法打开密匙文件，请确认文件是否存在及访问权限",
+                    "Failed to read key file. Check that it exists and is readable.",
                     exception
             );
         }
@@ -250,7 +250,7 @@ public class SecurityConfig {
 
         if(!pem.startsWith(beginMarker) || !pem.endsWith(endMarker)){
             throw new IllegalStateException(
-                    "密匙文件不是预期的PEM格式"
+                    "Key file must use the expected PEM format"
             );
         }
 
@@ -263,7 +263,7 @@ public class SecurityConfig {
             return Base64.getDecoder().decode(encodedKey);
         } catch (IllegalArgumentException exception){
             throw new IllegalStateException(
-                    "密钥文件包含无效的 Base64 内容",
+                    "Key file contains invalid Base64 data",
                     exception
             );
         }
