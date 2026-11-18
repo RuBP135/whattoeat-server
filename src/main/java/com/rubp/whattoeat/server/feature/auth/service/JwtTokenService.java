@@ -1,6 +1,7 @@
 package com.rubp.whattoeat.server.feature.auth.service;
 
 
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.feature.auth.exception.TokenIssuanceException;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
@@ -39,11 +40,11 @@ public class JwtTokenService {
         this.clock = clock;
     }
 
-    public String createToken(long id, JwtTokenType type) {
-        return createJwt(id, type).getTokenValue();
+    public String createToken(long id, Role role, JwtTokenType type) {
+        return createJwt(id, role, type).getTokenValue();
     }
 
-    public Jwt createJwt(long id, JwtTokenType type) {
+    public Jwt createJwt(long id, Role role, JwtTokenType type) {
         try {
             Instant now = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS);
 
@@ -52,39 +53,23 @@ public class JwtTokenService {
                 case REFRESH -> jwtProperties.refreshTokenTtl();
             };
 
-            return encodeJwt(id, type, now, now.plus(ttl));
+            return encodeJwt(id, role, type, now, now.plus(ttl));
         } catch (Exception exception) {
             throw new TokenIssuanceException(exception);
         }
     }
 
-    public String createRefreshToken(long id, Instant expiresAt) {
+    public String createRefreshToken(long id, Role role, Instant expiresAt) {
         Instant now = Instant.now(clock);
         if (expiresAt == null || !expiresAt.isAfter(now)) {
             throw new JwtException("refresh token 无效或已过期");
         }
 
         try {
-            return encodeJwt(id, JwtTokenType.REFRESH, now, expiresAt).getTokenValue();
+            return encodeJwt(id, role, JwtTokenType.REFRESH, now, expiresAt).getTokenValue();
         } catch (Exception exception) {
             throw new TokenIssuanceException(exception);
         }
-    }
-
-    private Jwt encodeJwt(long id, JwtTokenType type, Instant issuedAt, Instant expiresAt) {
-        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
-                .subject(Long.toString(id))
-                .issuedAt(issuedAt)
-                .expiresAt(expiresAt)
-                .claim("token_type", type.name())
-                .build();
-
-        JwsHeader header = JwsHeader
-                .with(SignatureAlgorithm.ES256)
-                .type("JWT")
-                .build();
-
-        return jwtEncoder.encode(JwtEncoderParameters.from(header, claimsSet));
     }
 
     public String hashRefreshToken(String refreshToken) {
@@ -96,5 +81,22 @@ public class JwtTokenService {
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("无法使用 SHA-256 哈希算法", exception);
         }
+    }
+
+    private Jwt encodeJwt(long id, Role role, JwtTokenType type, Instant issuedAt, Instant expiresAt) {
+        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
+                .subject(Long.toString(id))
+                .issuedAt(issuedAt)
+                .expiresAt(expiresAt)
+                .claim("role", role.name())
+                .claim("token_type", type.name())
+                .build();
+
+        JwsHeader header = JwsHeader
+                .with(SignatureAlgorithm.ES256)
+                .type("JWT")
+                .build();
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claimsSet));
     }
 }

@@ -1,11 +1,13 @@
 package com.rubp.whattoeat.server.feature.auth.service;
 
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JoseHeaderNames;
@@ -58,14 +60,14 @@ public class JwtTokenServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {123L, Long.MAX_VALUE})
-    public void createToken_shouldCreateValidToken(long id) {
+    @CsvSource({"123, USER", Long.MAX_VALUE + ", ADMIN"})
+    public void createToken_shouldCreateValidToken(long id, Role role) {
         Instant now = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS);
         Instant accessExpiresAt = now.plus(jwtProperties.accessTokenTtl());
         Instant refreshExpiresAt = now.plus(jwtProperties.refreshTokenTtl());
 
-        String accessToken = jwtTokenService.createToken(id, JwtTokenType.ACCESS);
-        String refreshToken = jwtTokenService.createToken(id, JwtTokenType.REFRESH);
+        String accessToken = jwtTokenService.createToken(id, role, JwtTokenType.ACCESS);
+        String refreshToken = jwtTokenService.createToken(id, role, JwtTokenType.REFRESH);
 
         assertNotNull(accessToken);
         assertNotNull(refreshToken);
@@ -75,6 +77,8 @@ public class JwtTokenServiceTest {
 
         assertEquals(Long.toString(id), accessJwt.getSubject());
         assertEquals(Long.toString(id), refreshJwt.getSubject());
+        assertEquals(role.name(), accessJwt.getClaimAsString("role"));
+        assertEquals(role.name(), refreshJwt.getClaimAsString("role"));
         assertEquals(JwtTokenType.ACCESS, JwtTokenType.valueOf(accessJwt.getClaimAsString("token_type")));
         assertEquals(JwtTokenType.REFRESH, JwtTokenType.valueOf(refreshJwt.getClaimAsString("token_type")));
         assertEquals(now, accessJwt.getIssuedAt());
@@ -85,7 +89,7 @@ public class JwtTokenServiceTest {
 
     @ParameterizedTest(name = "缺少 {0}")
     @ValueSource(strings = {
-            JwtClaimNames.SUB, JwtClaimNames.IAT, JwtClaimNames.EXP, "token_type", JoseHeaderNames.TYP
+            JwtClaimNames.SUB, JwtClaimNames.IAT, JwtClaimNames.EXP, "token_type", "role", JoseHeaderNames.TYP
     })
     public void decode_shouldRejectTokenMissingRequiredField(String field) {
         String accessToken = createSignedTokenWithoutField(JwtTokenType.ACCESS, field);
@@ -99,8 +103,8 @@ public class JwtTokenServiceTest {
 
     @Test
     public void decode_shouldRejectTokenOfDifferentType() {
-        String accessToken = jwtTokenService.createToken(123L, JwtTokenType.ACCESS);
-        String refreshToken = jwtTokenService.createToken(123L, JwtTokenType.REFRESH);
+        String accessToken = jwtTokenService.createToken(123L, Role.USER, JwtTokenType.ACCESS);
+        String refreshToken = jwtTokenService.createToken(123L, Role.USER, JwtTokenType.REFRESH);
 
         assertAll(
                 () -> assertThrows(JwtException.class, () -> jwtRefreshDecoder.decode(accessToken)),
@@ -109,7 +113,7 @@ public class JwtTokenServiceTest {
     }
 
     private String createSignedTokenWithoutField(JwtTokenType tokenType, String field) {
-        Jwt original = jwtTokenService.createJwt(123L, tokenType);
+        Jwt original = jwtTokenService.createJwt(123L, Role.USER, tokenType);
         JwsHeader header = JwsHeader.with(SignatureAlgorithm.ES256)
                 .headers(headers -> {
                     headers.putAll(original.getHeaders());

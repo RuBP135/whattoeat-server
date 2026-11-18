@@ -3,6 +3,7 @@ package com.rubp.whattoeat.server.feature.auth.service;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
@@ -10,6 +11,7 @@ import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenRequest;
 import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -43,16 +45,16 @@ public class RefreshServiceTest {
 
 
     @ParameterizedTest
-    @ValueSource(longs = {123L, Long.MAX_VALUE})
-    public void refreshAccessToken_shouldRotateTokensForActiveAccount(long id) {
+    @CsvSource({"123, USER", Long.MAX_VALUE + ", ADMIN"})
+    public void refreshAccessToken_shouldRotateTokensForActiveAccount(long id, Role role) {
         String accessToken = "access-token";
         String newRefreshToken = "new-refresh-token";
         String newHash = "new-refresh-token-hash";
 
         mockDecodedRefreshToken(id);
-        mockStoredRefreshToken(id, AccountStatus.ACTIVE);
-        when(jwtTokenService.createRefreshToken(id, EXPIRES_AT)).thenReturn(newRefreshToken);
-        when(jwtTokenService.createToken(id, JwtTokenType.ACCESS)).thenReturn(accessToken);
+        mockStoredRefreshToken(id, role, AccountStatus.ACTIVE);
+        when(jwtTokenService.createRefreshToken(id, role, EXPIRES_AT)).thenReturn(newRefreshToken);
+        when(jwtTokenService.createToken(id, role, JwtTokenType.ACCESS)).thenReturn(accessToken);
         when(jwtTokenService.hashRefreshToken(newRefreshToken)).thenReturn(newHash);
         when(refreshTokenRepository.replaceRefreshTokenHash(REFRESH_TOKEN_HASH, newHash, NOW)).thenReturn(1);
 
@@ -73,15 +75,15 @@ public class RefreshServiceTest {
         when(jwtRefreshDecoder.decode(REFRESH_TOKEN)).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(subject);
         when(jwt.getExpiresAt()).thenReturn(EXPIRES_AT);
-        mockStoredRefreshToken(123L, AccountStatus.ACTIVE);
+        mockStoredRefreshToken(123L, Role.USER, AccountStatus.ACTIVE);
 
         assertThrows(
                 JwtException.class,
                 () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
         );
 
-        verify(jwtTokenService, never()).createRefreshToken(anyLong(), any());
-        verify(jwtTokenService, never()).createToken(anyLong(), any());
+        verify(jwtTokenService, never()).createRefreshToken(anyLong(), any(), any());
+        verify(jwtTokenService, never()).createToken(anyLong(), any(), any());
         verify(refreshTokenRepository, never()).replaceRefreshTokenHash(any(), any(), any());
     }
 
@@ -116,7 +118,7 @@ public class RefreshServiceTest {
     public void refreshAccessToken_shouldThrowWhenAccountDisabled() {
         long id = 123L;
         mockDecodedRefreshToken(id);
-        mockStoredRefreshToken(id, AccountStatus.DISABLED);
+        mockStoredRefreshToken(id, Role.USER, AccountStatus.DISABLED);
 
         assertThrows(
                 AccountUnavailableException.class,
@@ -131,9 +133,10 @@ public class RefreshServiceTest {
         when(jwtRefreshDecoder.decode(REFRESH_TOKEN)).thenReturn(jwt);
     }
 
-    private void mockStoredRefreshToken(long id, AccountStatus status) {
+    private void mockStoredRefreshToken(long id, Role role, AccountStatus status) {
         AccountEntry account = mock(AccountEntry.class);
         when(account.getId()).thenReturn(id);
+        when(account.getRole()).thenReturn(role);
         when(account.getStatus()).thenReturn(status);
         when(jwtTokenService.hashRefreshToken(REFRESH_TOKEN)).thenReturn(REFRESH_TOKEN_HASH);
         when(refreshTokenRepository.findByRefreshTokenHash(REFRESH_TOKEN_HASH))

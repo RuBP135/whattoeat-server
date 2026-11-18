@@ -45,17 +45,19 @@ public class AccountService {
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
         String passwordHash = passwordEncoder.encode(request.password());
 
+        Role role = Role.USER;
+
         AccountEntry account = accountRepository.save(new AccountEntry(
                 request.username(),
                 passwordHash,
-                Role.USER,
+                role,
                 AccountStatus.ACTIVE,
                 Instant.now(clock)
         ));
 
         long id = account.getId();
-        String accessToken = jwtTokenService.createToken(id, JwtTokenType.ACCESS);
-        Jwt refreshJwt = jwtTokenService.createJwt(id, JwtTokenType.REFRESH);
+        String accessToken = jwtTokenService.createToken(id, role, JwtTokenType.ACCESS);
+        Jwt refreshJwt = jwtTokenService.createJwt(id, role, JwtTokenType.REFRESH);
         String refreshToken = refreshJwt.getTokenValue();
 
         String refreshTokenHash = jwtTokenService.hashRefreshToken(refreshToken);

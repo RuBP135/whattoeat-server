@@ -8,6 +8,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
@@ -49,6 +52,13 @@ public class SecurityConfig {
             @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder,
             ObjectMapper objectMapper
     ) {
+        var authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        authoritiesConverter.setAuthoritiesClaimName("role");
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
+
+        var authenticationConverter = new JwtAuthenticationConverter();
+        authenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -59,6 +69,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/accounts").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
@@ -78,7 +89,10 @@ public class SecurityConfig {
                                     )
                             );
                         })
-                        .jwt(jwt -> jwt.decoder(jwtAccessDecoder))
+                        .jwt(jwt -> jwt
+                                .decoder(jwtAccessDecoder)
+                                .jwtAuthenticationConverter(authenticationConverter)
+                        )
                 )
                 .build();
     }
@@ -137,7 +151,9 @@ public class SecurityConfig {
                 new JwtTypeValidator("JWT"),
                 new JwtClaimValidator<String>(JwtClaimNames.SUB, StringUtils::hasText),
                 new JwtClaimValidator<>(JwtClaimNames.IAT, Instant.class::isInstance),
-                new JwtClaimValidator<String>("token_type", tokenType::equals)
+                new JwtClaimValidator<String>("token_type", tokenType::equals),
+                new JwtClaimValidator<>("role", value ->
+                        Role.USER.name().equals(value) || Role.ADMIN.name().equals(value))
         )));
 
         return decoder;

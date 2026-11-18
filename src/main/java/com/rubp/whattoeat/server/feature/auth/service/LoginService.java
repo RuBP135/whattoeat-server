@@ -4,6 +4,7 @@ import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
@@ -52,8 +53,9 @@ public class LoginService {
         }
 
         long id = account.getId();
-        String accessToken = jwtTokenService.createToken(id, JwtTokenType.ACCESS);
-        Jwt refreshJwt = jwtTokenService.createJwt(id, JwtTokenType.REFRESH);
+        Role role = account.getRole();
+        String accessToken = jwtTokenService.createToken(id, role, JwtTokenType.ACCESS);
+        Jwt refreshJwt = jwtTokenService.createJwt(id, role, JwtTokenType.REFRESH);
         String refreshToken = refreshJwt.getTokenValue();
 
         String refreshTokenHash = jwtTokenService.hashRefreshToken(refreshToken);

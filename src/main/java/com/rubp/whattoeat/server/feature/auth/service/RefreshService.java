@@ -3,6 +3,7 @@ package com.rubp.whattoeat.server.feature.auth.service;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
@@ -51,6 +52,7 @@ public class RefreshService {
 
         AccountEntry account = entry.getAccount();
         long id = account.getId();
+        Role role = account.getRole();
         if (!Long.toString(id).equals(oldRefreshJwt.getSubject())) {
             throw new JwtException("refresh token 的账户 id 与记录不匹配");
         }
@@ -59,8 +61,8 @@ public class RefreshService {
         }
 
         Instant expiresAt = Objects.requireNonNull(oldRefreshJwt.getExpiresAt(), "解码后的 refresh token 必须包含 exp");
-        String newRefreshToken = jwtTokenService.createRefreshToken(id, expiresAt);
-        String accessToken = jwtTokenService.createToken(id, JwtTokenType.ACCESS);
+        String newRefreshToken = jwtTokenService.createRefreshToken(id, role, expiresAt);
+        String accessToken = jwtTokenService.createToken(id, role, JwtTokenType.ACCESS);
         String newHash = jwtTokenService.hashRefreshToken(newRefreshToken);
 
         Instant now = Instant.now(clock);
