@@ -3,10 +3,10 @@ package com.rubp.whattoeat.server.feature.auth.service;
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JoseHeaderNames;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -18,16 +18,11 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwtException;
 
-import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.spec.ECGenParameterSpec;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,13 +37,11 @@ public class JwtTokenServiceTest {
     private final JwtTokenService jwtTokenService;
 
     public JwtTokenServiceTest() throws Exception {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
-        keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1"));
-        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        JwtTestKeys keys = JwtTestKeys.generatePemKeyPair();
 
         jwtProperties = new JwtProperties(
-                pemResource("PRIVATE KEY", keyPair.getPrivate().getEncoded()),
-                pemResource("PUBLIC KEY", keyPair.getPublic().getEncoded()),
+                keys.privateKey(),
+                keys.publicKey(),
                 Duration.ofMinutes(5),
                 Duration.ofDays(30)
         );
@@ -131,12 +124,5 @@ public class JwtTokenServiceTest {
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
-    }
-
-    private ByteArrayResource pemResource(String type, byte[] encodedKey) {
-        String pem = "-----BEGIN " + type + "-----\n"
-                + Base64.getEncoder().encodeToString(encodedKey)
-                + "\n-----END " + type + "-----";
-        return new ByteArrayResource(pem.getBytes(StandardCharsets.US_ASCII));
     }
 }
