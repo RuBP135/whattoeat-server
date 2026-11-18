@@ -37,6 +37,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
@@ -118,6 +119,14 @@ public class SecurityConfig {
                 .withJwkSource(jwkSource)
                 .jwsAlgorithm(SignatureAlgorithm.ES256)
                 .build();
+
+        var defaultConverter = MappedJwtClaimSetConverter.withDefaults(Map.of());
+        decoder.setClaimSetConverter(claims -> {
+            if (claims.get(JwtClaimNames.IAT) == null) {
+                throw new BadJwtException("JWT 缺少 iat");
+            }
+            return defaultConverter.convert(claims);
+        });
 
         JwtTimestampValidator timestampValidator = new JwtTimestampValidator();
         timestampValidator.setAllowEmptyExpiryClaim(false);
