@@ -3,7 +3,10 @@ package com.rubp.whattoeat.server.feature.invitation.service;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import com.rubp.whattoeat.server.feature.invitation.domain.InvitationCodeGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,8 @@ import java.util.Base64;
 
 @Service
 public class InvitationService {
+
+    private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
 
     private final InvitationCodeGenerator invitationCodeGenerator = new InvitationCodeGenerator();
 
@@ -61,5 +66,14 @@ public class InvitationService {
         }
 
         return invitationRepository.deleteValidInvitation(code, Instant.now(clock)) == 1;
+    }
+
+    @Scheduled(fixedDelayString = "${invitation.cleanup-interval}")
+    @Transactional
+    public void cleanupExpiredInvitations() {
+        int deletedCount = invitationRepository.deleteExpiredInvitations(Instant.now(clock));
+        if (deletedCount > 0) {
+            log.info("清理了 {} 条过期邀请码", deletedCount);
+        }
     }
 }
