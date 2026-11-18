@@ -12,7 +12,7 @@ public class InvitationEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false, length = 16)
+    @Column(nullable = false, unique = true, updatable = false, length = 16)
     private byte[] code;
 
     @Column(name = "expires_at", nullable = false)
