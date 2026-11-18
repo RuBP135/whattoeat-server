@@ -46,3 +46,6 @@ build/
 ### env ###
 .env
 .env.*
+
+### other ###
+docs/local/
