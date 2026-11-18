@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 
 @Service
@@ -44,7 +45,7 @@ public class JwtTokenService {
 
     public Jwt createJwt(long id, JwtTokenType type) {
         try {
-            Instant now = Instant.now(clock);
+            Instant now = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS);
 
             Duration ttl = switch (type){
                 case ACCESS -> jwtProperties.accessTokenTtl();
