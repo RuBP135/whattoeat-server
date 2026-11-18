@@ -19,10 +19,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -34,7 +34,9 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
@@ -117,15 +119,16 @@ public class SecurityConfig {
                 .jwsAlgorithm(SignatureAlgorithm.ES256)
                 .build();
 
-        decoder.setJwtValidator(
-                new DelegatingOAuth2TokenValidator<>(
-                        JwtValidators.createDefault(),
-                        new JwtClaimValidator<String>(
-                                "token_type",
-                                tokenType::equals
-                        )
-                )
-        );
+        JwtTimestampValidator timestampValidator = new JwtTimestampValidator();
+        timestampValidator.setAllowEmptyExpiryClaim(false);
+
+        decoder.setJwtValidator(JwtValidators.createDefaultWithValidators(List.of(
+                timestampValidator,
+                new JwtTypeValidator("JWT"),
+                new JwtClaimValidator<String>(JwtClaimNames.SUB, StringUtils::hasText),
+                new JwtClaimValidator<>(JwtClaimNames.IAT, Instant.class::isInstance),
+                new JwtClaimValidator<String>("token_type", tokenType::equals)
+        )));
 
         return decoder;
     }
