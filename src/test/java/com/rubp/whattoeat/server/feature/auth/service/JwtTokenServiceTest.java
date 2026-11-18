@@ -3,12 +3,20 @@ package com.rubp.whattoeat.server.feature.auth.service;
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
-import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.JoseHeaderNames;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwtException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -30,6 +38,7 @@ public class JwtTokenServiceTest {
     private final JwtProperties jwtProperties;
     private final Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
+    private final JwtEncoder jwtEncoder;
     private final JwtTokenService jwtTokenService;
 
     public JwtTokenServiceTest() throws Exception {
@@ -47,8 +56,9 @@ public class JwtTokenServiceTest {
         SecurityConfig securityConfig = new SecurityConfig();
         jwtAccessDecoder = securityConfig.jwtAccessDecoder(jwtProperties);
         jwtRefreshDecoder = securityConfig.jwtRefreshDecoder(jwtProperties);
+        jwtEncoder = securityConfig.jwtEncoder(jwtProperties);
         jwtTokenService = new JwtTokenService(
-                securityConfig.jwtEncoder(jwtProperties),
+                jwtEncoder,
                 jwtProperties,
                 clock
         );
@@ -78,6 +88,49 @@ public class JwtTokenServiceTest {
         assertEquals(now, refreshJwt.getIssuedAt());
         assertEquals(accessExpiresAt, accessJwt.getExpiresAt());
         assertEquals(refreshExpiresAt, refreshJwt.getExpiresAt());
+    }
+
+    @ParameterizedTest(name = "缺少 {0}")
+    @ValueSource(strings = {
+            JwtClaimNames.SUB, JwtClaimNames.IAT, JwtClaimNames.EXP, "token_type", JoseHeaderNames.TYP
+    })
+    public void decode_shouldRejectTokenMissingRequiredField(String field) {
+        String accessToken = createSignedTokenWithoutField(JwtTokenType.ACCESS, field);
+        String refreshToken = createSignedTokenWithoutField(JwtTokenType.REFRESH, field);
+
+        assertAll(
+                () -> assertThrows(JwtException.class, () -> jwtAccessDecoder.decode(accessToken), "Access Token"),
+                () -> assertThrows(JwtException.class, () -> jwtRefreshDecoder.decode(refreshToken), "Refresh Token")
+        );
+    }
+
+    @Test
+    public void decode_shouldRejectTokenOfDifferentType() {
+        String accessToken = jwtTokenService.createToken(123L, JwtTokenType.ACCESS);
+        String refreshToken = jwtTokenService.createToken(123L, JwtTokenType.REFRESH);
+
+        assertAll(
+                () -> assertThrows(JwtException.class, () -> jwtRefreshDecoder.decode(accessToken)),
+                () -> assertThrows(JwtException.class, () -> jwtAccessDecoder.decode(refreshToken))
+        );
+    }
+
+    private String createSignedTokenWithoutField(JwtTokenType tokenType, String field) {
+        Jwt original = jwtTokenService.createJwt(123L, tokenType);
+        JwsHeader header = JwsHeader.with(SignatureAlgorithm.ES256)
+                .headers(headers -> {
+                    headers.putAll(original.getHeaders());
+                    headers.remove(field);
+                })
+                .build();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .claims(values -> {
+                    values.putAll(original.getClaims());
+                    values.remove(field);
+                })
+                .build();
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
 
     private ByteArrayResource pemResource(String type, byte[] encodedKey) {
