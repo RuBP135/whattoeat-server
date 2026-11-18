@@ -1,29 +1,24 @@
-package com.rubp.whattoeat.server.account;
+package com.rubp.whattoeat.server.feature.account.data;
 
-import com.rubp.whattoeat.server.account.model.AccountStatus;
-import com.rubp.whattoeat.server.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.model.Role;
 import jakarta.persistence.*;
 
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "account",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "unique_account_uid",
-                        columnNames = "uid"
-                )
-        }
-)
+@Table(name = "account")
 public class AccountEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false, length = 10)
-    private String uid;
+    @Column
+    private String username;
+
+    @Column(name = "password_hash")
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false, length = 10)
@@ -39,8 +34,9 @@ public class AccountEntry {
 
     protected AccountEntry() { }
 
-    public AccountEntry(String uid, Role role, AccountStatus status, Instant createdAt) {
-        this.uid = uid;
+    public AccountEntry(String username, String passwordHash, Role role, AccountStatus status, Instant createdAt) {
+        this.username = username;
+        this.passwordHash = passwordHash;
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;
@@ -60,8 +56,20 @@ public class AccountEntry {
         return id;
     }
 
-    public String getUid() {
-        return uid;
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public Role getRole() {
