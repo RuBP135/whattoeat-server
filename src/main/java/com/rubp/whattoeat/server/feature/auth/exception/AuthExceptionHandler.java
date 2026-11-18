@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.oauth2.jwt.JwtException;
 
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,6 +34,15 @@ public class AuthExceptionHandler {
         return new ErrorResponse(
                 "INVALID_REFRESH_TOKEN",
                 "refresh token 无效或已过期"
+        );
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleBadCredentials() {
+        return new ErrorResponse(
+                "INVALID_CREDENTIALS",
+                "用户名或密码错误"
         );
     }
 
