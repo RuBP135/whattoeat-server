@@ -1,10 +1,10 @@
 package com.rubp.whattoeat.server.feature.auth.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
-import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
+import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenRequest;
 import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenResponse;
@@ -16,74 +16,73 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class RefreshServiceTest {
 
-    private static final String USERNAME = "test-user";
-    private static final String PASSWORD_HASH = "encoded-password-hash";
+    private static final String REFRESH_TOKEN = "refresh-token";
+    private static final String REFRESH_TOKEN_HASH = "refresh-token-hash";
+    private static final Instant NOW = Instant.parse("2026-01-01T00:00:00Z");
+    private static final Instant EXPIRES_AT = NOW.plusSeconds(300);
 
     private final JwtDecoder jwtRefreshDecoder = mock(JwtDecoder.class);
     private final JwtTokenService jwtTokenService = mock(JwtTokenService.class);
-    private final AccountRepository accountRepository = mock(AccountRepository.class);
+    private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final RefreshService refreshService = new RefreshService(
             jwtRefreshDecoder,
             jwtTokenService,
-            accountRepository
+            refreshTokenRepository,
+            Clock.fixed(NOW, ZoneOffset.UTC)
     );
 
 
     @ParameterizedTest
     @ValueSource(longs = {123L, Long.MAX_VALUE})
-    public void refreshAccessToken_shouldCreateAccessTokenForActiveAccount(long id) {
-        String refreshToken = "refresh-token";
+    public void refreshAccessToken_shouldRotateTokensForActiveAccount(long id) {
         String accessToken = "access-token";
+        String newRefreshToken = "new-refresh-token";
+        String newHash = "new-refresh-token-hash";
 
-        Jwt jwt = mock(Jwt.class);
-        when(jwt.getSubject()).thenReturn(Long.toString(id));
-        when(jwtRefreshDecoder.decode(anyString())).thenReturn(jwt);
-
-        AccountEntry account = new AccountEntry(
-                USERNAME,
-                PASSWORD_HASH,
-                Role.USER,
-                AccountStatus.ACTIVE,
-                Instant.now()
-        );
-
-        when(accountRepository.findById(id)).thenReturn(Optional.of(account));
+        mockDecodedRefreshToken(id);
+        mockStoredRefreshToken(id, AccountStatus.ACTIVE);
+        when(jwtTokenService.createRefreshToken(id, EXPIRES_AT)).thenReturn(newRefreshToken);
         when(jwtTokenService.createToken(id, JwtTokenType.ACCESS)).thenReturn(accessToken);
+        when(jwtTokenService.hashRefreshToken(newRefreshToken)).thenReturn(newHash);
+        when(refreshTokenRepository.replaceRefreshTokenHash(REFRESH_TOKEN_HASH, newHash, NOW)).thenReturn(1);
 
         RefreshAccessTokenResponse response =
-                refreshService.refreshAccessToken(new RefreshAccessTokenRequest(refreshToken));
+                refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN));
 
         assertEquals(accessToken, response.accessToken());
+        assertEquals(newRefreshToken, response.refreshToken());
 
-        verify(jwtRefreshDecoder).decode(refreshToken);
-        verify(accountRepository).findById(id);
-        verify(jwtTokenService).createToken(id, JwtTokenType.ACCESS);
+        verify(refreshTokenRepository).replaceRefreshTokenHash(REFRESH_TOKEN_HASH, newHash, NOW);
     }
 
     @ParameterizedTest
     @NullSource
-    @ValueSource(strings = {"", "str", "9223372036854775808", "0", "-1"})
-    public void refreshAccessToken_shouldRejectInvalidAccountId(String subject) {
-        String refreshToken = "refresh-token";
+    @ValueSource(strings = {"124", "str", "9223372036854775808", "0", "-1"})
+    public void refreshAccessToken_shouldRejectSubjectNotMatchingStoredAccount(String subject) {
         Jwt jwt = mock(Jwt.class);
-        when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
+        when(jwtRefreshDecoder.decode(REFRESH_TOKEN)).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(subject);
+        when(jwt.getExpiresAt()).thenReturn(EXPIRES_AT);
+        mockStoredRefreshToken(123L, AccountStatus.ACTIVE);
 
         assertThrows(
                 JwtException.class,
-                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(refreshToken))
+                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
         );
 
-        verifyNoInteractions(accountRepository, jwtTokenService);
+        verify(jwtTokenService, never()).createRefreshToken(anyLong(), any());
+        verify(jwtTokenService, never()).createToken(anyLong(), any());
+        verify(refreshTokenRepository, never()).replaceRefreshTokenHash(any(), any(), any());
     }
 
     @Test
@@ -102,45 +101,43 @@ public class RefreshServiceTest {
     }
 
     @Test
-    public void refreshAccessToken_shouldThrowWhenIdNotExist() {
-        String refreshToken = "refresh-token";
-        long id = 123L;
-
-        Jwt jwt = mock(Jwt.class);
-        when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
-        when(jwt.getSubject()).thenReturn(Long.toString(id));
-
-        when(accountRepository.findById(id)).thenReturn(Optional.empty());
+    public void refreshAccessToken_shouldThrowWhenTokenIsNotRegistered() {
+        mockDecodedRefreshToken(123L);
+        when(jwtTokenService.hashRefreshToken(REFRESH_TOKEN)).thenReturn(REFRESH_TOKEN_HASH);
+        when(refreshTokenRepository.findByRefreshTokenHash(REFRESH_TOKEN_HASH)).thenReturn(Optional.empty());
 
         assertThrows(
-                AccountUnavailableException.class,
-                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(refreshToken))
+                JwtException.class,
+                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
         );
     }
 
     @Test
     public void refreshAccessToken_shouldThrowWhenAccountDisabled() {
-        String refreshToken = "refresh-token";
         long id = 123L;
-
-        Jwt jwt = mock(Jwt.class);
-        when(jwtRefreshDecoder.decode(refreshToken)).thenReturn(jwt);
-        when(jwt.getSubject()).thenReturn(Long.toString(id));
-
-        AccountEntry account = new AccountEntry(
-                USERNAME,
-                PASSWORD_HASH,
-                Role.USER,
-                AccountStatus.DISABLED,
-                Instant.now()
-        );
-
-        when(accountRepository.findById(id)).thenReturn(Optional.of(account));
+        mockDecodedRefreshToken(id);
+        mockStoredRefreshToken(id, AccountStatus.DISABLED);
 
         assertThrows(
                 AccountUnavailableException.class,
-                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(refreshToken))
+                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
         );
+    }
+
+    private void mockDecodedRefreshToken(long id) {
+        Jwt jwt = mock(Jwt.class);
+        when(jwt.getSubject()).thenReturn(Long.toString(id));
+        when(jwt.getExpiresAt()).thenReturn(EXPIRES_AT);
+        when(jwtRefreshDecoder.decode(REFRESH_TOKEN)).thenReturn(jwt);
+    }
+
+    private void mockStoredRefreshToken(long id, AccountStatus status) {
+        AccountEntry account = mock(AccountEntry.class);
+        when(account.getId()).thenReturn(id);
+        when(account.getStatus()).thenReturn(status);
+        when(jwtTokenService.hashRefreshToken(REFRESH_TOKEN)).thenReturn(REFRESH_TOKEN_HASH);
+        when(refreshTokenRepository.findByRefreshTokenHash(REFRESH_TOKEN_HASH))
+                .thenReturn(Optional.of(new RefreshTokenEntry(account, REFRESH_TOKEN_HASH, EXPIRES_AT)));
     }
 
 }
