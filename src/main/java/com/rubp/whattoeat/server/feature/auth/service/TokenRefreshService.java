@@ -7,8 +7,8 @@ import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
-import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenRequest;
-import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenResponse;
+import com.rubp.whattoeat.server.feature.auth.model.RefreshTokenPairRequest;
+import com.rubp.whattoeat.server.feature.auth.model.RefreshTokenPairResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -21,14 +21,14 @@ import java.time.Instant;
 import java.util.Objects;
 
 @Service
-public class RefreshService {
+public class TokenRefreshService {
 
     private final JwtDecoder jwtRefreshDecoder;
     private final JwtTokenService jwtTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final Clock clock;
 
-    public RefreshService(
+    public TokenRefreshService(
             @Qualifier("jwtRefreshDecoder") JwtDecoder jwtRefreshDecoder,
             JwtTokenService jwtTokenService,
             RefreshTokenRepository refreshTokenRepository,
@@ -42,7 +42,7 @@ public class RefreshService {
 
 
     @Transactional
-    public RefreshAccessTokenResponse refreshAccessToken(RefreshAccessTokenRequest request) {
+    public RefreshTokenPairResponse refreshTokenPair(RefreshTokenPairRequest request) {
         String oldRefreshToken = request.refreshToken();
         Jwt oldRefreshJwt = jwtRefreshDecoder.decode(oldRefreshToken);
 
@@ -70,6 +70,6 @@ public class RefreshService {
             throw new JwtException("Refresh token is invalid or has expired");
         }
 
-        return new RefreshAccessTokenResponse(accessToken, newRefreshToken);
+        return new RefreshTokenPairResponse(accessToken, newRefreshToken);
     }
 }
