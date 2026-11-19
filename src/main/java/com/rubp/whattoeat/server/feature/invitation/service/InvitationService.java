@@ -1,8 +1,9 @@
 package com.rubp.whattoeat.server.feature.invitation.service;
 
+import com.rubp.whattoeat.server.core.codec.Base64UrlCodec;
+import com.rubp.whattoeat.server.core.crypto.RandomCodeGenerator;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
-import com.rubp.whattoeat.server.feature.invitation.domain.InvitationCodeGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,14 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 
 @Service
 public class InvitationService {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
-
-    private final InvitationCodeGenerator invitationCodeGenerator = new InvitationCodeGenerator();
 
     private final InvitationRepository invitationRepository;
     private final Clock clock;
@@ -43,25 +41,22 @@ public class InvitationService {
 
     public String createInvitation() {
         Instant expiresAt = Instant.now(clock).plus(ttl);
-        String code = invitationCodeGenerator.generate();
+        byte[] code = RandomCodeGenerator.generate();
 
         invitationRepository.save(new InvitationEntry(
-                Base64.getUrlDecoder().decode(code),
+                code,
                 expiresAt
         ));
 
-        return code;
+        return Base64UrlCodec.encode(code);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public boolean consumeInvitation(String invitationCode) {
         byte[] code;
         try {
-            code = Base64.getUrlDecoder().decode(invitationCode);
+            code = Base64UrlCodec.decode(invitationCode);
         } catch (IllegalArgumentException exception) {
-            return false;
-        }
-        if (!Base64.getUrlEncoder().withoutPadding().encodeToString(code).equals(invitationCode)) {
             return false;
         }
 
