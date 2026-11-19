@@ -11,6 +11,7 @@ import com.rubp.whattoeat.server.feature.auth.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
+import com.rubp.whattoeat.server.feature.auth.service.SessionTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
@@ -50,7 +51,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = AccountController.class, properties = "spring.profiles.active=test")
-@Import({AccountService.class, InvitationService.class, JwtTokenService.class, PasswordConfig.class, SecurityConfig.class})
+@Import({
+    AccountService.class,
+    InvitationService.class,
+    JwtTokenService.class,
+    SessionTokenService.class,
+    PasswordConfig.class,
+    SecurityConfig.class
+})
 public class AccountControllerTest {
 
     private static final long ACCOUNT_ID = 123L;

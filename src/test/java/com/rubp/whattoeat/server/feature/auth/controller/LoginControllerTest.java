@@ -12,6 +12,7 @@ import com.rubp.whattoeat.server.feature.auth.model.LoginRequest;
 import com.rubp.whattoeat.server.feature.auth.model.LoginResponse;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
 import com.rubp.whattoeat.server.feature.auth.service.LoginService;
+import com.rubp.whattoeat.server.feature.auth.service.SessionTokenService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -49,7 +50,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = LoginController.class, properties = "spring.profiles.active=test")
-@Import({LoginService.class, JwtTokenService.class, PasswordConfig.class, SecurityConfig.class})
+@Import({
+    LoginService.class,
+    JwtTokenService.class,
+    SessionTokenService.class,
+    PasswordConfig.class,
+    SecurityConfig.class
+})
 public class LoginControllerTest {
 
     private static final long ACCOUNT_ID = 123L;
