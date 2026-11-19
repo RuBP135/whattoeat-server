@@ -7,13 +7,13 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.rubp.whattoeat.server.core.crypto.KeyFileReader;
 import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
 import com.rubp.whattoeat.server.feature.account.model.Role;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,8 +28,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
@@ -38,7 +36,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -173,7 +170,7 @@ public class SecurityConfig {
 
         try{
             return (ECPublicKey) keyFactory.generatePublic(
-                    new X509EncodedKeySpec(readPem(jwtProperties.publicKeyLocation(), "PUBLIC KEY"))
+                    new X509EncodedKeySpec(KeyFileReader.readPem(jwtProperties.publicKeyLocation(), "PUBLIC KEY"))
             );
 
         } catch (InvalidKeySpecException exception){
@@ -198,7 +195,7 @@ public class SecurityConfig {
 
         try{
             return (ECPrivateKey) keyFactory.generatePrivate(
-                    new PKCS8EncodedKeySpec(readPem(jwtProperties.privateKeyLocation(), "PRIVATE KEY"))
+                    new PKCS8EncodedKeySpec(KeyFileReader.readPem(jwtProperties.privateKeyLocation(), "PRIVATE KEY"))
             );
 
         } catch (InvalidKeySpecException exception){
@@ -231,41 +228,4 @@ public class SecurityConfig {
 
     }
 
-    private byte[] readPem(Resource resource, String type){
-        String pem;
-
-        try {
-            pem = resource
-                    .getContentAsString(StandardCharsets.US_ASCII)
-                    .trim();
-        } catch (IOException exception) {
-            throw new IllegalStateException(
-                    "Failed to read key file. Check that it exists and is readable.",
-                    exception
-            );
-        }
-
-        String beginMarker = "-----BEGIN " + type + "-----";
-        String endMarker = "-----END " + type + "-----";
-
-        if(!pem.startsWith(beginMarker) || !pem.endsWith(endMarker)){
-            throw new IllegalStateException(
-                    "Key file must use the expected PEM format"
-            );
-        }
-
-        String encodedKey = pem.substring(
-                beginMarker.length(),
-                pem.length() - endMarker.length()
-        ).replaceAll("\\s", "");
-
-        try {
-            return Base64.getDecoder().decode(encodedKey);
-        } catch (IllegalArgumentException exception){
-            throw new IllegalStateException(
-                    "Key file contains invalid Base64 data",
-                    exception
-            );
-        }
-    }
 }
