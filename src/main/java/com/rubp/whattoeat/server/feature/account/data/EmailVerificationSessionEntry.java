@@ -20,8 +20,7 @@ import java.time.Instant;
         name = "email_verification_session",
         indexes = {
                 @Index(columnList = "registration_expires_at"),
-                @Index(columnList = "invitation_id"),
-                @Index(columnList = "email_id")
+                @Index(columnList = "invitation_id")
         }
 )
 public class EmailVerificationSessionEntry {
@@ -35,9 +34,12 @@ public class EmailVerificationSessionEntry {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private InvitationEntry invitation;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "email_id", nullable = false, updatable = false)
-    private EmailLimitEntry emailLimit;
+    // 282 = 12 字节 IV + 最多 254 字节邮箱明文 + 16 字节 GCM 认证标签
+    @Column(name = "email_ciphertext", nullable = false, updatable = false, length = 282)
+    private byte[] emailCiphertext;
+
+    @Column(name = "email_hmac", nullable = false, updatable = false, length = 32)
+    private byte[] emailHmac;
 
     @Column(name = "code_hmac", nullable = false, length = 32)
     private byte[] codeHmac;
@@ -54,12 +56,14 @@ public class EmailVerificationSessionEntry {
     public EmailVerificationSessionEntry(
             byte[] id,
             InvitationEntry invitation,
-            EmailLimitEntry emailLimit,
+            byte[] emailCiphertext,
+            byte[] emailHmac,
             byte[] codeHmac
     ) {
         this.id = id.clone();
         this.invitation = invitation;
-        this.emailLimit = emailLimit;
+        this.emailCiphertext = emailCiphertext;
+        this.emailHmac = emailHmac;
         this.codeHmac = codeHmac;
     }
 
@@ -72,8 +76,12 @@ public class EmailVerificationSessionEntry {
         return invitation;
     }
 
-    public EmailLimitEntry getEmailLimit() {
-        return emailLimit;
+    public byte[] getEmailCiphertext() {
+        return emailCiphertext;
+    }
+
+    public byte[] getEmailHmac() {
+        return emailHmac;
     }
 
     public byte[] getCodeHmac() {
