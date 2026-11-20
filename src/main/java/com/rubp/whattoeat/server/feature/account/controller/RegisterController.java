@@ -1,6 +1,8 @@
 package com.rubp.whattoeat.server.feature.account.controller;
 
-import com.rubp.whattoeat.server.feature.account.model.StartRegistrationRequest;
+import com.rubp.whattoeat.server.feature.account.model.CompleteRegistrationRequest;
+import com.rubp.whattoeat.server.feature.account.model.CompleteRegistrationResponse;
+import com.rubp.whattoeat.server.feature.account.model.StartEmailRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.model.StartRegistrationResponse;
 import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.service.RegisterService;
@@ -24,7 +26,7 @@ public class RegisterController {
 
     @PostMapping("/start/email")
     public StartRegistrationResponse startRegistration(
-            @Valid @RequestBody StartRegistrationRequest request
+            @Valid @RequestBody StartEmailRegistrationRequest request
     ) {
         return registerService.startRegistration(request);
     }
@@ -33,5 +35,13 @@ public class RegisterController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void verifyRegistration(@Valid @RequestBody VerifyRegistrationRequest request) {
         registerService.verifyRegistration(request);
+    }
+
+    @PostMapping("/complete/email")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CompleteRegistrationResponse completeRegistration(
+            @Valid @RequestBody CompleteRegistrationRequest request
+    ) {
+        return registerService.completeRegistration(request);
     }
 }

@@ -1,11 +1,6 @@
 package com.rubp.whattoeat.server.feature.account.controller;
 
-import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.CreateAccountRequest;
-import com.rubp.whattoeat.server.feature.account.model.CreateAccountResponse;
-import com.rubp.whattoeat.server.feature.account.model.Role;
 import com.rubp.whattoeat.server.feature.account.service.RegisterService;
 import com.rubp.whattoeat.server.feature.auth.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
@@ -15,41 +10,28 @@ import com.rubp.whattoeat.server.feature.auth.service.SessionTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = RegisterController.class, properties = "spring.profiles.active=test")
 @Import({

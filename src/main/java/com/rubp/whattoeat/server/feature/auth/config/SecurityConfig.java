@@ -75,7 +75,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/accounts/register/start/email",
-                                "/api/accounts/register/verify/email"
+                                "/api/accounts/register/verify/email",
+                                "/api/accounts/register/complete/email"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .anyRequest().authenticated()
