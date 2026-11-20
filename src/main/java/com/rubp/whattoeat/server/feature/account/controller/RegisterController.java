@@ -22,14 +22,14 @@ public class RegisterController {
         this.registerService = registerService;
     }
 
-    @PostMapping("/start")
+    @PostMapping("/start/email")
     public StartRegistrationResponse startRegistration(
             @Valid @RequestBody StartRegistrationRequest request
     ) {
         return registerService.startRegistration(request);
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/verify/email")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void verifyRegistration(@Valid @RequestBody VerifyRegistrationRequest request) {
         registerService.verifyRegistration(request);

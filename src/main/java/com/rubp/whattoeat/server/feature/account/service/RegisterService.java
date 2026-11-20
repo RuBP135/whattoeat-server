@@ -14,7 +14,6 @@ import com.rubp.whattoeat.server.feature.account.exception.InvalidInvitationCode
 import com.rubp.whattoeat.server.feature.account.exception.InvalidVerificationCodeException;
 import com.rubp.whattoeat.server.feature.account.model.StartRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.model.StartRegistrationResponse;
-import com.rubp.whattoeat.server.feature.account.model.VerificationType;
 import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
@@ -83,7 +82,7 @@ public class RegisterService {
                 verificationCodeHmac,
                 expiresAt
         ));
-        return new StartRegistrationResponse(VerificationType.EMAIL, Base64UrlCodec.encode(sessionCode));
+        return new StartRegistrationResponse(Base64UrlCodec.encode(sessionCode));
     }
 
     @Transactional

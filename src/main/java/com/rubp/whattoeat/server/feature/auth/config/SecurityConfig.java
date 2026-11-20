@@ -67,8 +67,16 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/refresh",
+                                "/api/auth/login"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/accounts/register/start/email",
+                                "/api/accounts/register/verify/email"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
