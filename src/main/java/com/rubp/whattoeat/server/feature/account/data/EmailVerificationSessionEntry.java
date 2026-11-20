@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 
@@ -18,7 +19,7 @@ import java.time.Instant;
 @Table(
         name = "email_verification_session",
         indexes = {
-                @Index(columnList = "expires_at"),
+                @Index(columnList = "registration_expires_at"),
                 @Index(columnList = "invitation_id"),
                 @Index(columnList = "email_id")
         }
@@ -41,8 +42,11 @@ public class EmailVerificationSessionEntry {
     @Column(name = "code_hmac", nullable = false, length = 32)
     private byte[] codeHmac;
 
-    @Column(name = "expires_at", nullable = false)
-    private Instant expiresAt;
+    /**
+     * 新建会话时为空，邮箱验证码校验通过后记录允许注册的截止时间
+     */
+    @Column(name = "registration_expires_at")
+    private @Nullable Instant registrationExpiresAt;
 
 
     protected EmailVerificationSessionEntry() { }
@@ -51,14 +55,12 @@ public class EmailVerificationSessionEntry {
             byte[] id,
             InvitationEntry invitation,
             EmailLimitEntry emailLimit,
-            byte[] codeHmac,
-            Instant expiresAt
+            byte[] codeHmac
     ) {
         this.id = id.clone();
         this.invitation = invitation;
         this.emailLimit = emailLimit;
         this.codeHmac = codeHmac;
-        this.expiresAt = expiresAt;
     }
 
 
@@ -78,7 +80,11 @@ public class EmailVerificationSessionEntry {
         return codeHmac;
     }
 
-    public Instant getExpiresAt() {
-        return expiresAt;
+    public @Nullable Instant getRegistrationExpiresAt() {
+        return registrationExpiresAt;
+    }
+
+    public void setRegistrationExpiresAt(@Nullable Instant registrationExpiresAt) {
+        this.registrationExpiresAt = registrationExpiresAt;
     }
 }
