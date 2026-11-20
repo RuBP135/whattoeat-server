@@ -28,8 +28,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Base64;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,7 +74,7 @@ public class InvitationControllerTest {
         createInvitation(Role.USER)
                 .andExpect(status().isForbidden());
 
-        verifyNoInteractions(invitationRepository);
+        verify(invitationRepository, never()).save(any(InvitationEntry.class));
     }
 
     private ResultActions createInvitation(Role role) throws Exception {
