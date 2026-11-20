@@ -1,7 +1,7 @@
 package com.rubp.whattoeat.server.feature.account.data;
 
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import jakarta.persistence.*;
 
 import java.time.Instant;

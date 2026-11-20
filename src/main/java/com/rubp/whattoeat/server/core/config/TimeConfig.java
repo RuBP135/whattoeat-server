@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.feature.auth.config;
+package com.rubp.whattoeat.server.core.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

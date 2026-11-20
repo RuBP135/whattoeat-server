@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.feature.account.model;
+package com.rubp.whattoeat.server.feature.account.domain;
 
 public enum AccountStatus {
     ACTIVE,

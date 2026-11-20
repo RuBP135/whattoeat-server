@@ -1,8 +1,8 @@
 package com.rubp.whattoeat.server.feature.account.controller;
 
+import com.rubp.whattoeat.server.core.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.service.RegisterService;
-import com.rubp.whattoeat.server.feature.auth.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;

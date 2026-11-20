@@ -1,9 +1,9 @@
 package com.rubp.whattoeat.server.feature.auth.service;
 
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

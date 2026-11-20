@@ -3,7 +3,7 @@ package com.rubp.whattoeat.server.feature.auth.service;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.auth.model.LoginRequest;
 import com.rubp.whattoeat.server.feature.auth.model.LoginResponse;
 import org.springframework.security.authentication.BadCredentialsException;

@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.feature.auth.config;
+package com.rubp.whattoeat.server.core.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +14,7 @@ public class PasswordConfig {
                 16,         // 盐长度：16 字节
                 32,         // 哈希长度：32 字节
                 1,          // 并行度
-                19 * 1024,  // 内存成本：19 MiB，单位 KiB
+                19 * 1024,  // 内存成本：19 MiB
                 2           // 迭代次数
         );
     }

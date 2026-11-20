@@ -1,10 +1,10 @@
 package com.rubp.whattoeat.server.feature.auth.controller;
 
+import com.rubp.whattoeat.server.core.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
-import com.rubp.whattoeat.server.feature.auth.config.PasswordConfig;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;

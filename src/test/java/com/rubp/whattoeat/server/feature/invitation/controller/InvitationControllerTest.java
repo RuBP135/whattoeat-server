@@ -1,8 +1,8 @@
 package com.rubp.whattoeat.server.feature.invitation.controller;
 
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;

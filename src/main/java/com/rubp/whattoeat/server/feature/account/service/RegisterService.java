@@ -13,10 +13,10 @@ import com.rubp.whattoeat.server.feature.account.exception.EmailAlreadyRegistere
 import com.rubp.whattoeat.server.feature.account.exception.EmailCooldownException;
 import com.rubp.whattoeat.server.feature.account.exception.InvalidInvitationCodeException;
 import com.rubp.whattoeat.server.feature.account.exception.InvalidVerificationCodeException;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.model.CompleteRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.model.CompleteRegistrationResponse;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.account.model.StartEmailRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.model.StartRegistrationResponse;
 import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest;

@@ -1,10 +1,10 @@
 package com.rubp.whattoeat.server.feature.auth.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 

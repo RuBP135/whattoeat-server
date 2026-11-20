@@ -2,11 +2,11 @@ package com.rubp.whattoeat.server.feature.auth.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.model.RefreshTokenPairRequest;
 import com.rubp.whattoeat.server.feature.auth.model.RefreshTokenPairResponse;
 import org.junit.jupiter.api.Test;
