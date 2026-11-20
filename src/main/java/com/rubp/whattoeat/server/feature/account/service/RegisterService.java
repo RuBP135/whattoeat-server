@@ -2,21 +2,27 @@ package com.rubp.whattoeat.server.feature.account.service;
 
 import com.rubp.whattoeat.server.core.codec.Base64UrlCodec;
 import com.rubp.whattoeat.server.core.crypto.RandomCodeGenerator;
+import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.data.EmailCoolDownRepository;
 import com.rubp.whattoeat.server.feature.account.data.EmailVerificationSessionEntry;
 import com.rubp.whattoeat.server.feature.account.data.EmailVerificationSessionRepository;
 import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
 import com.rubp.whattoeat.server.feature.account.domain.EmailVerificationCodeGenerator;
+import com.rubp.whattoeat.server.feature.account.exception.EmailAlreadyRegisteredException;
 import com.rubp.whattoeat.server.feature.account.exception.EmailCooldownException;
 import com.rubp.whattoeat.server.feature.account.exception.InvalidInvitationCodeException;
+import com.rubp.whattoeat.server.feature.account.exception.InvalidVerificationCodeException;
 import com.rubp.whattoeat.server.feature.account.model.StartRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.model.StartRegistrationResponse;
 import com.rubp.whattoeat.server.feature.account.model.VerificationType;
+import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.security.MessageDigest;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,6 +31,7 @@ import java.time.Instant;
 public class RegisterService {
 
     private final Clock clock;
+    private final AccountRepository accountRepository;
     private final InvitationRepository invitationRepository;
     private final EmailCoolDownRepository emailCoolDownRepository;
     private final AccountEmailCrypto emailCrypto;
@@ -34,6 +41,7 @@ public class RegisterService {
 
     public RegisterService(
             Clock clock,
+            AccountRepository accountRepository,
             InvitationRepository invitationRepository,
             EmailCoolDownRepository emailCoolDownRepository,
             AccountEmailCrypto emailCrypto,
@@ -42,6 +50,7 @@ public class RegisterService {
             @Value("${account.email.verification-ttl}") Duration verificationTtl
     ) {
         this.clock = clock;
+        this.accountRepository = accountRepository;
         this.invitationRepository = invitationRepository;
         this.emailCoolDownRepository = emailCoolDownRepository;
         this.emailCrypto = emailCrypto;
@@ -77,11 +86,34 @@ public class RegisterService {
         return new StartRegistrationResponse(VerificationType.EMAIL, Base64UrlCodec.encode(sessionCode));
     }
 
-    private InvitationEntry findValidInvitation(String invitationCode) {
-        if (invitationCode == null) {
-            throw new InvalidInvitationCodeException();
+    @Transactional
+    public void verifyRegistration(VerifyRegistrationRequest request) {
+        byte[] sessionCode;
+        try {
+            sessionCode = Base64UrlCodec.decode(request.sessionCode());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidVerificationCodeException();
         }
 
+        EmailVerificationSessionEntry session = emailVerificationSessionRepository.findById(sessionCode)
+                .orElseThrow(InvalidVerificationCodeException::new);
+        if (!session.getRegistrationExpiresAt().isAfter(Instant.now(clock))) {
+            throw new InvalidVerificationCodeException();
+        }
+
+        byte[] verificationCodeHmac = emailCrypto.hmacVerificationCode(sessionCode, request.verificationCode());
+        if (!MessageDigest.isEqual(session.getVerificationCodeHmac(), verificationCodeHmac)) {
+            throw new InvalidVerificationCodeException();
+        }
+
+        if (accountRepository.existsByEmailHmac(session.getEmailHmac())) {
+            throw new EmailAlreadyRegisteredException();
+        }
+
+        session.markVerified();
+    }
+
+    private InvitationEntry findValidInvitation(String invitationCode) {
         byte[] code;
         try {
             code = Base64UrlCodec.decode(invitationCode);
@@ -91,4 +123,5 @@ public class RegisterService {
         return invitationRepository.findByCodeAndExpiresAtAfter(code, Instant.now(clock))
                 .orElseThrow(InvalidInvitationCodeException::new);
     }
+
 }

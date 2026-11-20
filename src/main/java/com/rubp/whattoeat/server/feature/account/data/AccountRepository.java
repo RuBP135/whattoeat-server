@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<AccountEntry, Long> {
     Optional<AccountEntry> findByUsername(String username);
+
+    boolean existsByEmailHmac(byte[] emailHmac);
 }
