@@ -1,5 +1,6 @@
 package com.rubp.whattoeat.server.feature.account.domain;
 
+import com.rubp.whattoeat.server.core.codec.Base64UrlCodec;
 import com.rubp.whattoeat.server.core.crypto.KeyFileReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -62,11 +63,19 @@ public class AccountEmailCrypto {
 
     public byte[] hmac(String email) {
         String normalizedEmail = email.strip().toLowerCase(Locale.ROOT);
+        return hmac(normalizedEmail.getBytes(StandardCharsets.UTF_8));
+    }
 
+    public byte[] hmacVerificationCode(byte[] sessionCode, String verificationCode) {
+        String input = "verification-code:" + Base64UrlCodec.encode(sessionCode) + ":" + verificationCode;
+        return hmac(input.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private byte[] hmac(byte[] input) {
         try {
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
             mac.init(hmacKey);
-            return mac.doFinal(normalizedEmail.getBytes(StandardCharsets.UTF_8));
+            return mac.doFinal(input);
         } catch (GeneralSecurityException exception) {
             throw new IllegalStateException("Failed to calculate account email HMAC", exception);
         }

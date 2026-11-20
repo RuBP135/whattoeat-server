@@ -11,7 +11,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 
@@ -26,8 +25,8 @@ import java.time.Instant;
 public class EmailVerificationSessionEntry {
 
     @Id
-    @Column(length = 16, nullable = false, updatable = false)
-    private byte[] id;
+    @Column(name = "session_code", length = 16, nullable = false, updatable = false)
+    private byte[] sessionCode;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "invitation_id", nullable = false, updatable = false)
@@ -41,35 +40,37 @@ public class EmailVerificationSessionEntry {
     @Column(name = "email_hmac", nullable = false, updatable = false, length = 32)
     private byte[] emailHmac;
 
-    @Column(name = "code_hmac", nullable = false, length = 32)
-    private byte[] codeHmac;
+    @Column(name = "verification_code_hmac", nullable = false, length = 32)
+    private byte[] verificationCodeHmac;
 
-    /**
-     * 新建会话时为空，邮箱验证码校验通过后记录允许注册的截止时间
-     */
-    @Column(name = "registration_expires_at")
-    private @Nullable Instant registrationExpiresAt;
+    @Column(name = "registration_expires_at", nullable = false, updatable = false)
+    private Instant registrationExpiresAt;
+
+    @Column(nullable = false)
+    private boolean verified;
 
 
     protected EmailVerificationSessionEntry() { }
 
     public EmailVerificationSessionEntry(
-            byte[] id,
+            byte[] sessionCode,
             InvitationEntry invitation,
             byte[] emailCiphertext,
             byte[] emailHmac,
-            byte[] codeHmac
+            byte[] verificationCodeHmac,
+            Instant registrationExpiresAt
     ) {
-        this.id = id.clone();
+        this.sessionCode = sessionCode.clone();
         this.invitation = invitation;
         this.emailCiphertext = emailCiphertext;
         this.emailHmac = emailHmac;
-        this.codeHmac = codeHmac;
+        this.verificationCodeHmac = verificationCodeHmac;
+        this.registrationExpiresAt = registrationExpiresAt;
     }
 
 
-    public byte[] getId() {
-        return id.clone();
+    public byte[] getSessionCode() {
+        return sessionCode.clone();
     }
 
     public InvitationEntry getInvitation() {
@@ -84,15 +85,23 @@ public class EmailVerificationSessionEntry {
         return emailHmac;
     }
 
-    public byte[] getCodeHmac() {
-        return codeHmac;
+    public byte[] getVerificationCodeHmac() {
+        return verificationCodeHmac;
     }
 
-    public @Nullable Instant getRegistrationExpiresAt() {
+    public Instant getRegistrationExpiresAt() {
         return registrationExpiresAt;
     }
 
-    public void setRegistrationExpiresAt(@Nullable Instant registrationExpiresAt) {
-        this.registrationExpiresAt = registrationExpiresAt;
+    public void setVerificationCodeHmac(byte[] verificationCodeHmac) {
+        this.verificationCodeHmac = verificationCodeHmac;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void markVerified() {
+        this.verified = true;
     }
 }
