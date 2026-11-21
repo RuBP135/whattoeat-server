@@ -2,8 +2,9 @@ package com.rubp.whattoeat.server.feature.auth.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
-import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
+import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
 import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
 import com.rubp.whattoeat.server.feature.auth.model.LoginRequest;
 import com.rubp.whattoeat.server.feature.auth.model.LoginResponse;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,23 +18,29 @@ public class LoginService {
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid username or password";
 
     private final AccountRepository accountRepository;
+    private final AccountEmailCrypto emailCrypto;
     private final PasswordEncoder passwordEncoder;
     private final SessionTokenService sessionTokenService;
 
     public LoginService(
             AccountRepository accountRepository,
+            AccountEmailCrypto emailCrypto,
             PasswordEncoder passwordEncoder,
             SessionTokenService sessionTokenService
     ) {
         this.accountRepository = accountRepository;
+        this.emailCrypto = emailCrypto;
         this.passwordEncoder = passwordEncoder;
         this.sessionTokenService = sessionTokenService;
     }
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        AccountEntry account = accountRepository.findByUsername(request.username())
-                .orElseThrow(() -> new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE));
+        String identifier = request.identifier();
+        AccountEntry account = (identifier.contains("@")
+                ? accountRepository.findByEmailHmac(emailCrypto.hmac(identifier))
+                : accountRepository.findByUsername(identifier)
+        ).orElseThrow(() -> new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE));
 
         if (!passwordEncoder.matches(request.password(), account.getPasswordHash())) {
             throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);

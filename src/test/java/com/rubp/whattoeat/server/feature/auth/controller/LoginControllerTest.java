@@ -3,6 +3,7 @@ package com.rubp.whattoeat.server.feature.auth.controller;
 import com.rubp.whattoeat.server.core.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
+import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
 import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -90,6 +92,9 @@ public class LoginControllerTest {
     private AccountRepository accountRepository;
 
     @MockitoBean
+    private AccountEmailCrypto emailCrypto;
+
+    @MockitoBean
     private RefreshTokenRepository refreshTokenRepository;
 
     @DynamicPropertySource
@@ -100,7 +105,7 @@ public class LoginControllerTest {
     }
 
     @Test
-    public void login_shouldReturnSignedTokensWithoutAuthentication() throws Exception {
+    public void login_shouldReturnSignedTokensUsingUsername() throws Exception {
         AccountEntry account = givenActiveAccount();
 
         var result = login(USERNAME, PASSWORD)
@@ -123,6 +128,28 @@ public class LoginControllerTest {
         assertEquals(account, savedToken.getAccount());
         assertEquals(jwtTokenService.hashRefreshToken(response.refreshToken()), savedToken.getRefreshTokenHash());
         assertEquals(refreshJwt.getExpiresAt(), savedToken.getExpiresAt());
+
+        verify(accountRepository).findByUsername(USERNAME);
+        verifyNoMoreInteractions(accountRepository);
+        verifyNoInteractions(emailCrypto);
+    }
+
+    @Test
+    public void login_shouldReturnTokensUsingEmail() throws Exception {
+        String email = "user@example.com";
+        byte[] emailHmac = new byte[32];
+        AccountEntry account = createActiveAccount();
+        when(emailCrypto.hmac(email)).thenReturn(emailHmac);
+        when(accountRepository.findByEmailHmac(emailHmac)).thenReturn(Optional.of(account));
+
+        login(email, PASSWORD)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+
+        verify(emailCrypto).hmac(email);
+        verify(accountRepository).findByEmailHmac(emailHmac);
+        verifyNoMoreInteractions(accountRepository);
     }
 
     @Test
@@ -147,18 +174,23 @@ public class LoginControllerTest {
     }
 
     private AccountEntry givenActiveAccount() {
-        AccountEntry account = new AccountEntry(
-                USERNAME, passwordEncoder.encode(PASSWORD), Role.USER, AccountStatus.ACTIVE, Instant.now(clock)
-        );
-        ReflectionTestUtils.setField(account, "id", ACCOUNT_ID);
+        AccountEntry account = createActiveAccount();
         when(accountRepository.findByUsername(USERNAME)).thenReturn(Optional.of(account));
         return account;
     }
 
-    private ResultActions login(String username, String password) throws Exception {
+    private AccountEntry createActiveAccount() {
+        AccountEntry account = new AccountEntry(
+                USERNAME, passwordEncoder.encode(PASSWORD), Role.USER, AccountStatus.ACTIVE, Instant.now(clock)
+        );
+        ReflectionTestUtils.setField(account, "id", ACCOUNT_ID);
+        return account;
+    }
+
+    private ResultActions login(String identifier, String password) throws Exception {
         return mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(new LoginRequest(username, password))));
+                .content(mapper.writeValueAsString(new LoginRequest(identifier, password))));
     }
 
     private void assertInvalidCredentials(String username, String password) throws Exception {

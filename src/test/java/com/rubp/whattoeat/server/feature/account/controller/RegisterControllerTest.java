@@ -276,6 +276,15 @@ public class RegisterControllerTest {
     }
 
     @Test
+    public void completeRegistration_shouldRejectUsernameContainingAtSign() throws Exception {
+        register("/complete/email", new CompleteRegistrationRequest(SESSION_CODE, USERNAME + "@", PASSWORD))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+
+        verifyNoInteractions(emailRegistrationSessionRepository, accountRepository);
+    }
+
+    @Test
     public void completeRegistration_shouldRejectUnknownSessionCode() throws Exception {
         byte[] sessionCode = Base64UrlCodec.decode(SESSION_CODE);
         when(emailRegistrationSessionRepository.findById(sessionCode)).thenReturn(Optional.empty());
