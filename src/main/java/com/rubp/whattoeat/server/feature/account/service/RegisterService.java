@@ -5,12 +5,13 @@ import com.rubp.whattoeat.server.core.crypto.RandomCodeGenerator;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.data.EmailCoolDownRepository;
-import com.rubp.whattoeat.server.feature.account.data.EmailVerificationSessionEntry;
-import com.rubp.whattoeat.server.feature.account.data.EmailVerificationSessionRepository;
+import com.rubp.whattoeat.server.feature.account.data.EmailRegistrationSessionEntry;
+import com.rubp.whattoeat.server.feature.account.data.EmailRegistrationSessionRepository;
 import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
 import com.rubp.whattoeat.server.feature.account.domain.EmailVerificationCodeGenerator;
 import com.rubp.whattoeat.server.feature.account.exception.EmailAlreadyRegisteredException;
 import com.rubp.whattoeat.server.feature.account.exception.EmailCooldownException;
+import com.rubp.whattoeat.server.feature.account.exception.InvalidRegistrationSessionException;
 import com.rubp.whattoeat.server.feature.account.exception.InvalidVerificationCodeException;
 import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.model.CompleteRegistrationRequest;
@@ -42,7 +43,7 @@ public class RegisterService {
     private final EmailCoolDownRepository emailCoolDownRepository;
     private final AccountEmailCrypto emailCrypto;
     private final VerificationEmailSender verificationEmailSender;
-    private final EmailVerificationSessionRepository emailVerificationSessionRepository;
+    private final EmailRegistrationSessionRepository emailRegistrationSessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final SessionTokenService sessionTokenService;
     private final Duration verificationTtl;
@@ -54,7 +55,7 @@ public class RegisterService {
             EmailCoolDownRepository emailCoolDownRepository,
             AccountEmailCrypto emailCrypto,
             VerificationEmailSender verificationEmailSender,
-            EmailVerificationSessionRepository emailVerificationSessionRepository,
+            EmailRegistrationSessionRepository emailRegistrationSessionRepository,
             PasswordEncoder passwordEncoder,
             SessionTokenService sessionTokenService,
             @Value("${account.email.verification-ttl}") Duration verificationTtl
@@ -65,7 +66,7 @@ public class RegisterService {
         this.emailCoolDownRepository = emailCoolDownRepository;
         this.emailCrypto = emailCrypto;
         this.verificationEmailSender = verificationEmailSender;
-        this.emailVerificationSessionRepository = emailVerificationSessionRepository;
+        this.emailRegistrationSessionRepository = emailRegistrationSessionRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionTokenService = sessionTokenService;
         this.verificationTtl = verificationTtl;
@@ -87,7 +88,7 @@ public class RegisterService {
 
         verificationEmailSender.sendVerificationCode(email, verificationCode);
         Instant expiresAt = Instant.now(clock).plus(verificationTtl);
-        emailVerificationSessionRepository.save(new EmailVerificationSessionEntry(
+        emailRegistrationSessionRepository.save(new EmailRegistrationSessionEntry(
                 sessionCode,
                 invitation,
                 emailCiphertext,
@@ -100,7 +101,7 @@ public class RegisterService {
 
     @Transactional
     public void verifyRegistration(VerifyRegistrationRequest request) {
-        EmailVerificationSessionEntry session = findValidSession(request.sessionCode());
+        EmailRegistrationSessionEntry session = findValidSession(request.sessionCode());
         byte[] verificationCodeHmac = emailCrypto.hmacVerificationCode(
                 session.getSessionCode(), request.verificationCode()
         );
@@ -117,7 +118,7 @@ public class RegisterService {
 
     @Transactional
     public CompleteRegistrationResponse completeRegistration(CompleteRegistrationRequest request) {
-        EmailVerificationSessionEntry session = findValidSession(request.sessionCode());
+        EmailRegistrationSessionEntry session = findValidSession(request.sessionCode());
         if (!session.isVerified()) {
             throw new InvalidVerificationCodeException();
         }
@@ -145,18 +146,18 @@ public class RegisterService {
         return new CompleteRegistrationResponse(tokens.accessToken(), tokens.refreshToken());
     }
 
-    private EmailVerificationSessionEntry findValidSession(String sessionCode) {
+    private EmailRegistrationSessionEntry findValidSession(String sessionCode) {
         byte[] code;
         try {
             code = Base64UrlCodec.decode(sessionCode);
         } catch (IllegalArgumentException exception) {
-            throw new InvalidVerificationCodeException();
+            throw new InvalidRegistrationSessionException();
         }
 
-        EmailVerificationSessionEntry session = emailVerificationSessionRepository.findById(code)
-                .orElseThrow(InvalidVerificationCodeException::new);
+        EmailRegistrationSessionEntry session = emailRegistrationSessionRepository.findById(code)
+                .orElseThrow(InvalidRegistrationSessionException::new);
         if (!session.getRegistrationExpiresAt().isAfter(Instant.now(clock))) {
-            throw new InvalidVerificationCodeException();
+            throw new InvalidRegistrationSessionException();
         }
         return session;
     }

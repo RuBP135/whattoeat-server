@@ -1,7 +1,6 @@
 package com.rubp.whattoeat.server.feature.account.exception;
 
 import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
-import com.rubp.whattoeat.server.feature.invitation.exception.InvalidInvitationCodeException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,21 +20,21 @@ public class AccountExceptionHandler {
         );
     }
 
-    @ExceptionHandler(InvalidInvitationCodeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleInvalidInvitationCode() {
-        return new ErrorResponse(
-                "INVALID_INVITATION_CODE",
-                "邀请码无效、已过期或已使用"
-        );
-    }
-
     @ExceptionHandler(EmailCooldownException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
     public ErrorResponse handleEmailCooldown() {
         return new ErrorResponse(
                 "EMAIL_COOLDOWN",
                 "验证码发送过于频繁，请稍后再试"
+        );
+    }
+
+    @ExceptionHandler(InvalidRegistrationSessionException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidRegistrationSession() {
+        return new ErrorResponse(
+                "INVALID_REGISTRATION_SESSION",
+                "注册会话无效或已过期"
         );
     }
 

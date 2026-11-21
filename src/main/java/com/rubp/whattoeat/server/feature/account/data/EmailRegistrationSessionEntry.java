@@ -16,13 +16,13 @@ import java.time.Instant;
 
 @Entity
 @Table(
-        name = "email_verification_session",
+        name = "email_registration_session",
         indexes = {
                 @Index(columnList = "registration_expires_at"),
                 @Index(columnList = "invitation_id")
         }
 )
-public class EmailVerificationSessionEntry {
+public class EmailRegistrationSessionEntry {
 
     @Id
     @Column(name = "session_code", length = 16, nullable = false, updatable = false)
@@ -50,9 +50,9 @@ public class EmailVerificationSessionEntry {
     private boolean verified;
 
 
-    protected EmailVerificationSessionEntry() { }
+    protected EmailRegistrationSessionEntry() { }
 
-    public EmailVerificationSessionEntry(
+    public EmailRegistrationSessionEntry(
             byte[] sessionCode,
             InvitationEntry invitation,
             byte[] emailCiphertext,

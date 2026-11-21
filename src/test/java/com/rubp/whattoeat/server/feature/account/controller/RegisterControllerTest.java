@@ -5,8 +5,8 @@ import com.rubp.whattoeat.server.core.config.PasswordConfig;
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
 import com.rubp.whattoeat.server.feature.account.data.EmailCoolDownRepository;
-import com.rubp.whattoeat.server.feature.account.data.EmailVerificationSessionEntry;
-import com.rubp.whattoeat.server.feature.account.data.EmailVerificationSessionRepository;
+import com.rubp.whattoeat.server.feature.account.data.EmailRegistrationSessionEntry;
+import com.rubp.whattoeat.server.feature.account.data.EmailRegistrationSessionRepository;
 import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
 import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.domain.Role;
@@ -120,7 +120,7 @@ public class RegisterControllerTest {
     private EmailCoolDownRepository emailCoolDownRepository;
 
     @MockitoBean
-    private EmailVerificationSessionRepository emailVerificationSessionRepository;
+    private EmailRegistrationSessionRepository emailRegistrationSessionRepository;
 
     @MockitoBean
     private VerificationEmailSender verificationEmailSender;
@@ -152,9 +152,9 @@ public class RegisterControllerTest {
         String sentCode = codeCaptor.getValue();
         assertTrue(sentCode.matches("[0-9]{6}"));
 
-        var sessionCaptor = ArgumentCaptor.forClass(EmailVerificationSessionEntry.class);
-        verify(emailVerificationSessionRepository).save(sessionCaptor.capture());
-        EmailVerificationSessionEntry session = sessionCaptor.getValue();
+        var sessionCaptor = ArgumentCaptor.forClass(EmailRegistrationSessionEntry.class);
+        verify(emailRegistrationSessionRepository).save(sessionCaptor.capture());
+        EmailRegistrationSessionEntry session = sessionCaptor.getValue();
         result.andExpect(jsonPath("$.sessionCode").value(Base64UrlCodec.encode(session.getSessionCode())));
         assertArrayEquals(emailHmac, session.getEmailHmac());
         assertArrayEquals(
@@ -174,7 +174,7 @@ public class RegisterControllerTest {
                 .andExpect(jsonPath("$.code").value("INVALID_INVITATION_CODE"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
 
-        verifyNoInteractions(emailCoolDownRepository, verificationEmailSender, emailVerificationSessionRepository);
+        verifyNoInteractions(emailCoolDownRepository, verificationEmailSender, emailRegistrationSessionRepository);
     }
 
     @Test
@@ -187,12 +187,12 @@ public class RegisterControllerTest {
         register("/start/email", new StartEmailRegistrationRequest(INVITATION_CODE, EMAIL))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("EMAIL_COOLDOWN"));
-        verifyNoInteractions(verificationEmailSender, emailVerificationSessionRepository);
+        verifyNoInteractions(verificationEmailSender, emailRegistrationSessionRepository);
     }
 
     @Test
     public void verifyRegistration_shouldMarkSessionVerified() throws Exception {
-        EmailVerificationSessionEntry session = givenUnverifiedSession();
+        EmailRegistrationSessionEntry session = givenUnverifiedSession();
         when(accountRepository.existsByEmailHmac(session.getEmailHmac())).thenReturn(false);
 
         register("/verify/email", new VerifyRegistrationRequest(SESSION_CODE, VERIFICATION_CODE))
@@ -203,7 +203,7 @@ public class RegisterControllerTest {
 
     @Test
     public void verifyRegistration_shouldRejectIncorrectVerificationCode() throws Exception {
-        EmailVerificationSessionEntry session = givenUnverifiedSession();
+        EmailRegistrationSessionEntry session = givenUnverifiedSession();
 
         register("/verify/email", new VerifyRegistrationRequest(SESSION_CODE, "654321"))
                 .andExpect(status().isBadRequest())
@@ -214,7 +214,7 @@ public class RegisterControllerTest {
 
     @Test
     public void verifyRegistration_shouldRejectAlreadyRegisteredEmail() throws Exception {
-        EmailVerificationSessionEntry session = givenUnverifiedSession();
+        EmailRegistrationSessionEntry session = givenUnverifiedSession();
         when(accountRepository.existsByEmailHmac(session.getEmailHmac())).thenReturn(true);
 
         register("/verify/email", new VerifyRegistrationRequest(SESSION_CODE, VERIFICATION_CODE))
@@ -226,13 +226,13 @@ public class RegisterControllerTest {
     }
 
     @Test
-    public void verifyRegistration_shouldRejectExpiredVerificationCode() throws Exception {
-        EmailVerificationSessionEntry session = givenUnverifiedSession(Instant.now(clock).minusSeconds(1));
+    public void verifyRegistration_shouldRejectExpiredSession() throws Exception {
+        EmailRegistrationSessionEntry session = givenUnverifiedSession(Instant.now(clock).minusSeconds(1));
 
         register("/verify/email", new VerifyRegistrationRequest(SESSION_CODE, VERIFICATION_CODE))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_VERIFICATION_CODE"))
-                .andExpect(jsonPath("$.message").isNotEmpty());
+                .andExpect(jsonPath("$.code").value("INVALID_REGISTRATION_SESSION"))
+                .andExpect(jsonPath("$.message").value("注册会话无效或已过期"));
 
         assertFalse(session.isVerified());
         verifyNoInteractions(accountRepository);
@@ -240,7 +240,7 @@ public class RegisterControllerTest {
 
     @Test
     public void completeRegistration_shouldCreateAccountAndReturnSignedTokens() throws Exception {
-        EmailVerificationSessionEntry session = givenUnverifiedSession();
+        EmailRegistrationSessionEntry session = givenUnverifiedSession();
         session.markVerified();
         byte[] invitationCode = session.getInvitation().getCode();
         AccountEntry savedAccount = new AccountEntry(
@@ -278,25 +278,25 @@ public class RegisterControllerTest {
     @Test
     public void completeRegistration_shouldRejectUnknownSessionCode() throws Exception {
         byte[] sessionCode = Base64UrlCodec.decode(SESSION_CODE);
-        when(emailVerificationSessionRepository.findById(sessionCode)).thenReturn(Optional.empty());
+        when(emailRegistrationSessionRepository.findById(sessionCode)).thenReturn(Optional.empty());
 
-        assertCompleteRegistrationRejected();
+        assertCompleteRegistrationRejected("INVALID_REGISTRATION_SESSION", "注册会话无效或已过期");
 
-        verify(emailVerificationSessionRepository).findById(sessionCode);
+        verify(emailRegistrationSessionRepository).findById(sessionCode);
     }
 
     @Test
     public void completeRegistration_shouldRejectUnverifiedSession() throws Exception {
         givenUnverifiedSession();
 
-        assertCompleteRegistrationRejected();
+        assertCompleteRegistrationRejected("INVALID_VERIFICATION_CODE", "验证码无效或已过期");
     }
 
-    private void assertCompleteRegistrationRejected() throws Exception {
+    private void assertCompleteRegistrationRejected(String errorCode, String message) throws Exception {
         register("/complete/email", new CompleteRegistrationRequest(SESSION_CODE, USERNAME, PASSWORD))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_VERIFICATION_CODE"))
-                .andExpect(jsonPath("$.message").isNotEmpty());
+                .andExpect(jsonPath("$.code").value(errorCode))
+                .andExpect(jsonPath("$.message").value(message));
 
         verifyNoInteractions(invitationRepository, accountRepository, refreshTokenRepository);
     }
@@ -313,13 +313,13 @@ public class RegisterControllerTest {
         );
     }
 
-    private EmailVerificationSessionEntry givenUnverifiedSession() {
+    private EmailRegistrationSessionEntry givenUnverifiedSession() {
         return givenUnverifiedSession(Instant.now(clock).plus(Duration.ofMinutes(5)));
     }
 
-    private EmailVerificationSessionEntry givenUnverifiedSession(Instant expiresAt) {
+    private EmailRegistrationSessionEntry givenUnverifiedSession(Instant expiresAt) {
         byte[] sessionCode = Base64UrlCodec.decode(SESSION_CODE);
-        var session = new EmailVerificationSessionEntry(
+        var session = new EmailRegistrationSessionEntry(
                 sessionCode,
                 validInvitation(),
                 emailCrypto.encrypt(EMAIL),
@@ -327,7 +327,7 @@ public class RegisterControllerTest {
                 emailCrypto.hmacVerificationCode(sessionCode, VERIFICATION_CODE),
                 expiresAt
         );
-        when(emailVerificationSessionRepository.findById(sessionCode)).thenReturn(Optional.of(session));
+        when(emailRegistrationSessionRepository.findById(sessionCode)).thenReturn(Optional.of(session));
         return session;
     }
 
