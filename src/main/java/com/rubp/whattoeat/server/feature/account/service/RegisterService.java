@@ -11,7 +11,6 @@ import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
 import com.rubp.whattoeat.server.feature.account.domain.EmailVerificationCodeGenerator;
 import com.rubp.whattoeat.server.feature.account.exception.EmailAlreadyRegisteredException;
 import com.rubp.whattoeat.server.feature.account.exception.EmailCooldownException;
-import com.rubp.whattoeat.server.feature.account.exception.InvalidInvitationCodeException;
 import com.rubp.whattoeat.server.feature.account.exception.InvalidVerificationCodeException;
 import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.model.CompleteRegistrationRequest;
@@ -22,7 +21,8 @@ import com.rubp.whattoeat.server.feature.account.model.StartRegistrationResponse
 import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest;
 import com.rubp.whattoeat.server.feature.auth.service.SessionTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
-import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
+import com.rubp.whattoeat.server.feature.invitation.exception.InvalidInvitationCodeException;
+import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,7 +38,7 @@ public class RegisterService {
 
     private final Clock clock;
     private final AccountRepository accountRepository;
-    private final InvitationRepository invitationRepository;
+    private final InvitationService invitationService;
     private final EmailCoolDownRepository emailCoolDownRepository;
     private final AccountEmailCrypto emailCrypto;
     private final VerificationEmailSender verificationEmailSender;
@@ -50,7 +50,7 @@ public class RegisterService {
     public RegisterService(
             Clock clock,
             AccountRepository accountRepository,
-            InvitationRepository invitationRepository,
+            InvitationService invitationService,
             EmailCoolDownRepository emailCoolDownRepository,
             AccountEmailCrypto emailCrypto,
             VerificationEmailSender verificationEmailSender,
@@ -61,7 +61,7 @@ public class RegisterService {
     ) {
         this.clock = clock;
         this.accountRepository = accountRepository;
-        this.invitationRepository = invitationRepository;
+        this.invitationService = invitationService;
         this.emailCoolDownRepository = emailCoolDownRepository;
         this.emailCrypto = emailCrypto;
         this.verificationEmailSender = verificationEmailSender;
@@ -72,7 +72,7 @@ public class RegisterService {
     }
 
     public StartRegistrationResponse startRegistration(StartEmailRegistrationRequest request) {
-        InvitationEntry invitation = findValidInvitation(request.invitationCode());
+        InvitationEntry invitation = invitationService.findValidInvitation(request.invitationCode());
 
         String email = request.email().strip();
         byte[] emailHmac = emailCrypto.hmac(email);
@@ -100,7 +100,7 @@ public class RegisterService {
 
     @Transactional
     public void verifyRegistration(VerifyRegistrationRequest request) {
-        EmailVerificationSessionEntry session = findUnexpiredSession(request.sessionCode());
+        EmailVerificationSessionEntry session = findValidSession(request.sessionCode());
         byte[] verificationCodeHmac = emailCrypto.hmacVerificationCode(
                 session.getSessionCode(), request.verificationCode()
         );
@@ -117,7 +117,7 @@ public class RegisterService {
 
     @Transactional
     public CompleteRegistrationResponse completeRegistration(CompleteRegistrationRequest request) {
-        EmailVerificationSessionEntry session = findUnexpiredSession(request.sessionCode());
+        EmailVerificationSessionEntry session = findValidSession(request.sessionCode());
         if (!session.isVerified()) {
             throw new InvalidVerificationCodeException();
         }
@@ -132,7 +132,7 @@ public class RegisterService {
         );
         account.setEmail(session.getEmailCiphertext(), session.getEmailHmac());
 
-        if (invitationRepository.deleteValidInvitation(invitationCode, Instant.now(clock)) == 0) {
+        if (!invitationService.consumeInvitation(invitationCode)) {
             throw new InvalidInvitationCodeException();
         }
         if (accountRepository.insertIfEmailAbsent(account) == 0) {
@@ -145,31 +145,20 @@ public class RegisterService {
         return new CompleteRegistrationResponse(tokens.accessToken(), tokens.refreshToken());
     }
 
-    private EmailVerificationSessionEntry findUnexpiredSession(String encodedSessionCode) {
-        byte[] sessionCode;
+    private EmailVerificationSessionEntry findValidSession(String sessionCode) {
+        byte[] code;
         try {
-            sessionCode = Base64UrlCodec.decode(encodedSessionCode);
+            code = Base64UrlCodec.decode(sessionCode);
         } catch (IllegalArgumentException exception) {
             throw new InvalidVerificationCodeException();
         }
 
-        EmailVerificationSessionEntry session = emailVerificationSessionRepository.findById(sessionCode)
+        EmailVerificationSessionEntry session = emailVerificationSessionRepository.findById(code)
                 .orElseThrow(InvalidVerificationCodeException::new);
         if (!session.getRegistrationExpiresAt().isAfter(Instant.now(clock))) {
             throw new InvalidVerificationCodeException();
         }
         return session;
-    }
-
-    private InvitationEntry findValidInvitation(String invitationCode) {
-        byte[] code;
-        try {
-            code = Base64UrlCodec.decode(invitationCode);
-        } catch (IllegalArgumentException exception) {
-            throw new InvalidInvitationCodeException();
-        }
-        return invitationRepository.findByCodeAndExpiresAtAfter(code, Instant.now(clock))
-                .orElseThrow(InvalidInvitationCodeException::new);
     }
 
 }

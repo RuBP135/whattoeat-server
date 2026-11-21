@@ -4,6 +4,7 @@ import com.rubp.whattoeat.server.core.codec.Base64UrlCodec;
 import com.rubp.whattoeat.server.core.crypto.RandomCodeGenerator;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
+import com.rubp.whattoeat.server.feature.invitation.exception.InvalidInvitationCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,16 +52,20 @@ public class InvitationService {
         return Base64UrlCodec.encode(code);
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
-    public boolean consumeInvitation(String invitationCode) {
+    public InvitationEntry findValidInvitation(String invitationCode) {
         byte[] code;
         try {
             code = Base64UrlCodec.decode(invitationCode);
         } catch (IllegalArgumentException exception) {
-            return false;
+            throw new InvalidInvitationCodeException();
         }
+        return invitationRepository.findByCodeAndExpiresAtAfter(code, Instant.now(clock))
+                .orElseThrow(InvalidInvitationCodeException::new);
+    }
 
-        return invitationRepository.deleteValidInvitation(code, Instant.now(clock)) == 1;
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean consumeInvitation(byte[] invitationCode) {
+        return invitationRepository.deleteValidInvitation(invitationCode, Instant.now(clock)) == 1;
     }
 
     @Scheduled(fixedDelayString = "${invitation.cleanup-interval}")

@@ -1,6 +1,7 @@
 package com.rubp.whattoeat.server.feature.account.exception;
 
 import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
+import com.rubp.whattoeat.server.feature.invitation.exception.InvalidInvitationCodeException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
