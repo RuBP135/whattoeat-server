@@ -1,7 +1,7 @@
 package com.rubp.whattoeat.server.feature.account.data;
 
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -19,6 +19,12 @@ public class AccountEntry {
 
     @Column(name = "password_hash")
     private String passwordHash;
+
+    @Column(name = "email_ciphertext", length = 282)
+    private byte[] emailCiphertext;
+
+    @Column(name = "email_hmac", unique = true, length = 32)
+    private byte[] emailHmac;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false, length = 10)
@@ -70,6 +76,19 @@ public class AccountEntry {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public byte[] getEmailCiphertext() {
+        return emailCiphertext;
+    }
+
+    public byte[] getEmailHmac() {
+        return emailHmac;
+    }
+
+    public void setEmail(byte[] emailCiphertext, byte[] emailHmac) {
+        this.emailCiphertext = emailCiphertext;
+        this.emailHmac = emailHmac;
     }
 
     public Role getRole() {

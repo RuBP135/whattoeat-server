@@ -1,6 +1,6 @@
 package com.rubp.whattoeat.server.feature.account.model;
 
-public record CreateAccountResponse(
+public record CompleteRegistrationResponse(
         String accessToken,
         String refreshToken
 ) { }

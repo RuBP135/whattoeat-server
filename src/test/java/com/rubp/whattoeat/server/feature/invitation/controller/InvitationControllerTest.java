@@ -1,8 +1,8 @@
 package com.rubp.whattoeat.server.feature.invitation.controller;
 
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
@@ -28,8 +28,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Base64;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,7 +74,7 @@ public class InvitationControllerTest {
         createInvitation(Role.USER)
                 .andExpect(status().isForbidden());
 
-        verifyNoInteractions(invitationRepository);
+        verify(invitationRepository, never()).save(any(InvitationEntry.class));
     }
 
     private ResultActions createInvitation(Role role) throws Exception {

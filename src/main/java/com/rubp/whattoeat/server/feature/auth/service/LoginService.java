@@ -2,48 +2,45 @@ package com.rubp.whattoeat.server.feature.auth.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.data.AccountRepository;
+import com.rubp.whattoeat.server.feature.account.domain.AccountEmailCrypto;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
-import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
-import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.model.LoginRequest;
 import com.rubp.whattoeat.server.feature.auth.model.LoginResponse;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
 
 @Service
 public class LoginService {
 
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid username or password";
 
-    private final JwtTokenService jwtTokenService;
     private final AccountRepository accountRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final AccountEmailCrypto emailCrypto;
     private final PasswordEncoder passwordEncoder;
+    private final SessionTokenService sessionTokenService;
 
     public LoginService(
-            JwtTokenService jwtTokenService,
             AccountRepository accountRepository,
-            RefreshTokenRepository refreshTokenRepository,
-            PasswordEncoder passwordEncoder
+            AccountEmailCrypto emailCrypto,
+            PasswordEncoder passwordEncoder,
+            SessionTokenService sessionTokenService
     ) {
-        this.jwtTokenService = jwtTokenService;
         this.accountRepository = accountRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.emailCrypto = emailCrypto;
         this.passwordEncoder = passwordEncoder;
+        this.sessionTokenService = sessionTokenService;
     }
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        AccountEntry account = accountRepository.findByUsername(request.username())
-                .orElseThrow(() -> new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE));
+        String identifier = request.identifier();
+        AccountEntry account = (identifier.contains("@")
+                ? accountRepository.findByEmailHmac(emailCrypto.hmac(identifier))
+                : accountRepository.findByUsername(identifier)
+        ).orElseThrow(() -> new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE));
 
         if (!passwordEncoder.matches(request.password(), account.getPasswordHash())) {
             throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
@@ -52,16 +49,7 @@ public class LoginService {
             throw new AccountUnavailableException();
         }
 
-        long id = account.getId();
-        Role role = account.getRole();
-        String accessToken = jwtTokenService.createToken(id, role, JwtTokenType.ACCESS);
-        Jwt refreshJwt = jwtTokenService.createJwt(id, role, JwtTokenType.REFRESH);
-        String refreshToken = refreshJwt.getTokenValue();
-
-        String refreshTokenHash = jwtTokenService.hashRefreshToken(refreshToken);
-        Instant expiresAt = refreshJwt.getExpiresAt();
-        refreshTokenRepository.save(new RefreshTokenEntry(account, refreshTokenHash, expiresAt));
-
-        return new LoginResponse(accessToken, refreshToken);
+        var tokens = sessionTokenService.issueTokenPair(account);
+        return new LoginResponse(tokens.accessToken(), tokens.refreshToken());
     }
 }

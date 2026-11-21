@@ -2,13 +2,13 @@ package com.rubp.whattoeat.server.feature.auth.service;
 
 import com.rubp.whattoeat.server.feature.account.data.AccountEntry;
 import com.rubp.whattoeat.server.feature.account.exception.AccountUnavailableException;
-import com.rubp.whattoeat.server.feature.account.model.AccountStatus;
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.AccountStatus;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
-import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenRequest;
-import com.rubp.whattoeat.server.feature.auth.model.RefreshAccessTokenResponse;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.model.RefreshTokenPairRequest;
+import com.rubp.whattoeat.server.feature.auth.model.RefreshTokenPairResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -26,7 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class RefreshServiceTest {
+public class TokenRefreshServiceTest {
 
     private static final String REFRESH_TOKEN = "refresh-token";
     private static final String REFRESH_TOKEN_HASH = "refresh-token-hash";
@@ -36,7 +36,7 @@ public class RefreshServiceTest {
     private final JwtDecoder jwtRefreshDecoder = mock(JwtDecoder.class);
     private final JwtTokenService jwtTokenService = mock(JwtTokenService.class);
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
-    private final RefreshService refreshService = new RefreshService(
+    private final TokenRefreshService tokenRefreshService = new TokenRefreshService(
             jwtRefreshDecoder,
             jwtTokenService,
             refreshTokenRepository,
@@ -46,7 +46,7 @@ public class RefreshServiceTest {
 
     @ParameterizedTest
     @CsvSource({"123, USER", Long.MAX_VALUE + ", ADMIN"})
-    public void refreshAccessToken_shouldRotateTokensForActiveAccount(long id, Role role) {
+    public void refreshTokenPair_shouldRotateTokensForActiveAccount(long id, Role role) {
         String accessToken = "access-token";
         String newRefreshToken = "new-refresh-token";
         String newHash = "new-refresh-token-hash";
@@ -58,8 +58,8 @@ public class RefreshServiceTest {
         when(jwtTokenService.hashRefreshToken(newRefreshToken)).thenReturn(newHash);
         when(refreshTokenRepository.replaceRefreshTokenHash(REFRESH_TOKEN_HASH, newHash, NOW)).thenReturn(1);
 
-        RefreshAccessTokenResponse response =
-                refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN));
+        RefreshTokenPairResponse response =
+                tokenRefreshService.refreshTokenPair(new RefreshTokenPairRequest(REFRESH_TOKEN));
 
         assertEquals(accessToken, response.accessToken());
         assertEquals(newRefreshToken, response.refreshToken());
@@ -70,7 +70,7 @@ public class RefreshServiceTest {
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"124", "str", "9223372036854775808", "0", "-1"})
-    public void refreshAccessToken_shouldRejectSubjectNotMatchingStoredAccount(String subject) {
+    public void refreshTokenPair_shouldRejectSubjectNotMatchingStoredAccount(String subject) {
         Jwt jwt = mock(Jwt.class);
         when(jwtRefreshDecoder.decode(REFRESH_TOKEN)).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(subject);
@@ -79,7 +79,7 @@ public class RefreshServiceTest {
 
         assertThrows(
                 JwtException.class,
-                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
+                () -> tokenRefreshService.refreshTokenPair(new RefreshTokenPairRequest(REFRESH_TOKEN))
         );
 
         verify(jwtTokenService, never()).createRefreshToken(anyLong(), any(), any());
@@ -88,7 +88,7 @@ public class RefreshServiceTest {
     }
 
     @Test
-    public void refreshAccessToken_shouldThrowWhenRefreshTokenInvalid(){
+    public void refreshTokenPair_shouldThrowWhenRefreshTokenInvalid(){
         String refreshToken = "invalid-refresh-token";
         JwtException jwtException = new JwtException("refresh token 不合法");
 
@@ -96,33 +96,33 @@ public class RefreshServiceTest {
 
         assertThrows(
                 JwtException.class,
-                () -> refreshService.refreshAccessToken(
-                        new RefreshAccessTokenRequest(refreshToken)
+                () -> tokenRefreshService.refreshTokenPair(
+                        new RefreshTokenPairRequest(refreshToken)
                 )
         );
     }
 
     @Test
-    public void refreshAccessToken_shouldThrowWhenTokenIsNotRegistered() {
+    public void refreshTokenPair_shouldThrowWhenTokenIsNotRegistered() {
         mockDecodedRefreshToken(123L);
         when(jwtTokenService.hashRefreshToken(REFRESH_TOKEN)).thenReturn(REFRESH_TOKEN_HASH);
         when(refreshTokenRepository.findByRefreshTokenHash(REFRESH_TOKEN_HASH)).thenReturn(Optional.empty());
 
         assertThrows(
                 JwtException.class,
-                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
+                () -> tokenRefreshService.refreshTokenPair(new RefreshTokenPairRequest(REFRESH_TOKEN))
         );
     }
 
     @Test
-    public void refreshAccessToken_shouldThrowWhenAccountDisabled() {
+    public void refreshTokenPair_shouldThrowWhenAccountDisabled() {
         long id = 123L;
         mockDecodedRefreshToken(id);
         mockStoredRefreshToken(id, Role.USER, AccountStatus.DISABLED);
 
         assertThrows(
                 AccountUnavailableException.class,
-                () -> refreshService.refreshAccessToken(new RefreshAccessTokenRequest(REFRESH_TOKEN))
+                () -> tokenRefreshService.refreshTokenPair(new RefreshTokenPairRequest(REFRESH_TOKEN))
         );
     }
 

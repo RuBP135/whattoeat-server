@@ -6,8 +6,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public interface InvitationRepository extends JpaRepository<InvitationEntry, Long> {
+
+    Optional<InvitationEntry> findByCodeAndExpiresAtAfter(byte[] code, Instant now);
 
     @Modifying
     @Query("""

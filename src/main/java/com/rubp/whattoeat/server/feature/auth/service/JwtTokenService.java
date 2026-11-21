@@ -1,10 +1,10 @@
 package com.rubp.whattoeat.server.feature.auth.service;
 
 
-import com.rubp.whattoeat.server.feature.account.model.Role;
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.JwtProperties;
 import com.rubp.whattoeat.server.feature.auth.exception.TokenIssuanceException;
-import com.rubp.whattoeat.server.feature.auth.model.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.Jwt;

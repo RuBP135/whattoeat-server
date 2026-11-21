@@ -20,12 +20,39 @@ public class AccountExceptionHandler {
         );
     }
 
-    @ExceptionHandler(InvalidInvitationCodeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleInvalidInvitationCode() {
+    @ExceptionHandler(EmailCooldownException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorResponse handleEmailCooldown() {
         return new ErrorResponse(
-                "INVALID_INVITATION_CODE",
-                "邀请码无效、已过期或已使用"
+                "EMAIL_COOLDOWN",
+                "验证码发送过于频繁，请稍后再试"
+        );
+    }
+
+    @ExceptionHandler(InvalidRegistrationSessionException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidRegistrationSession() {
+        return new ErrorResponse(
+                "INVALID_REGISTRATION_SESSION",
+                "注册会话无效或已过期"
+        );
+    }
+
+    @ExceptionHandler(InvalidVerificationCodeException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidVerificationCode() {
+        return new ErrorResponse(
+                "INVALID_VERIFICATION_CODE",
+                "验证码无效或已过期"
+        );
+    }
+
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleEmailAlreadyRegistered() {
+        return new ErrorResponse(
+                "EMAIL_ALREADY_REGISTERED",
+                "该邮箱已注册"
         );
     }
 }

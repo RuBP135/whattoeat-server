@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.feature.auth.model;
+package com.rubp.whattoeat.server.feature.auth.domain;
 
 public enum JwtTokenType {
     ACCESS,
