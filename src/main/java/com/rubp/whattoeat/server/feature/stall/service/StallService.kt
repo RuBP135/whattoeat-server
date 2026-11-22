@@ -15,8 +15,14 @@ class StallService(
     private val dishRepository: DishRepository,
     private val stallCategoryRepository: StallCategoryRepository
 ) {
-    fun listStalls(): List<StallResponse> {
-        return stallRepository.findActiveStalls().map { stall ->
+    fun listStalls(categoryId: Long?): List<StallResponse> {
+        val stalls = if (categoryId == null) {
+            stallRepository.findActiveStalls()
+        } else {
+            stallRepository.findActiveStallsByCategoryId(categoryId)
+        }
+
+        return stalls.map { stall ->
             StallResponse(stall.id, stall.name, stall.location.id)
         }
     }

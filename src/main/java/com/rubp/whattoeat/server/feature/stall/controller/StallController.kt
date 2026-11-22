@@ -7,6 +7,7 @@ import com.rubp.whattoeat.server.feature.stall.service.StallService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -15,8 +16,8 @@ class StallController(
     private val stallService: StallService
 ) {
     @GetMapping
-    fun listStalls(): List<StallResponse> {
-        return stallService.listStalls()
+    fun listStalls(@RequestParam("categoryId", required = false) categoryId: Long?): List<StallResponse> {
+        return stallService.listStalls(categoryId)
     }
 
     @GetMapping("/{stallId}/dishes")
