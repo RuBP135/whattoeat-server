@@ -15,11 +15,15 @@ class StallService(
     private val dishRepository: DishRepository,
     private val stallCategoryRepository: StallCategoryRepository
 ) {
-    fun listStalls(categoryId: Long?): List<StallResponse> {
-        val stalls = if (categoryId == null) {
-            stallRepository.findActiveStalls()
-        } else {
+    fun listStalls(categoryId: Long?, locationId: Long?): List<StallResponse> {
+        val stalls = if (categoryId != null && locationId != null) {
+            stallRepository.findActiveStallsByLocationIdAndCategoryId(locationId, categoryId)
+        } else if (locationId != null) {
+            stallRepository.findActiveStallsByLocationId(locationId)
+        } else if (categoryId != null) {
             stallRepository.findActiveStallsByCategoryId(categoryId)
+        } else {
+            stallRepository.findActiveStalls()
         }
 
         return stalls.map { stall ->

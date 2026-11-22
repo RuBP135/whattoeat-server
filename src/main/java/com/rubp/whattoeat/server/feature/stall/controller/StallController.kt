@@ -16,8 +16,11 @@ class StallController(
     private val stallService: StallService
 ) {
     @GetMapping
-    fun listStalls(@RequestParam("categoryId", required = false) categoryId: Long?): List<StallResponse> {
-        return stallService.listStalls(categoryId)
+    fun listStalls(
+        @RequestParam("categoryId", required = false) categoryId: Long?,
+        @RequestParam("locationId", required = false) locationId: Long?
+    ): List<StallResponse> {
+        return stallService.listStalls(categoryId, locationId)
     }
 
     @GetMapping("/{stallId}/dishes")

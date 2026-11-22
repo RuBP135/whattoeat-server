@@ -21,6 +21,18 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         select stall
         from StallEntry stall
         join fetch stall.location
+        where stall.active = true
+          and stall.location.id = :locationId
+        order by stall.location.id, stall.name
+        """
+    )
+    fun findActiveStallsByLocationId(@Param("locationId") locationId: Long): List<StallEntry>
+
+    @Query(
+        """
+        select stall
+        from StallEntry stall
+        join fetch stall.location
         join stall.categories category
         where stall.active = true
           and category.id = :categoryId
@@ -28,4 +40,21 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         """
     )
     fun findActiveStallsByCategoryId(@Param("categoryId") categoryId: Long): List<StallEntry>
+
+    @Query(
+        """
+        select stall
+        from StallEntry stall
+        join fetch stall.location
+        join stall.categories category
+        where stall.active = true
+          and stall.location.id = :locationId
+          and category.id = :categoryId
+        order by stall.location.id, stall.name
+        """
+    )
+    fun findActiveStallsByLocationIdAndCategoryId(
+        @Param("locationId") locationId: Long,
+        @Param("categoryId") categoryId: Long
+    ): List<StallEntry>
 }
