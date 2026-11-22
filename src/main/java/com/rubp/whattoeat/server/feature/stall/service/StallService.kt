@@ -28,10 +28,7 @@ class StallService(
     }
 
     fun listDishes(stallId: Long): List<DishResponse> {
-        val stall = stallRepository.findById(stallId).orElseThrow { StallNotFoundException() }
-        if (!stall.active) {
-            throw StallNotFoundException()
-        }
+        requireActiveStall(stallId)
 
         return dishRepository.findByStallId(stallId).map { dish ->
             DishResponse(dish.id, dish.name)
@@ -41,6 +38,21 @@ class StallService(
     fun listCategories(): List<StallCategoryResponse> {
         return stallCategoryRepository.findAllByOrderByIdAsc().map { category ->
             StallCategoryResponse(category.id, category.name)
+        }
+    }
+
+    fun listStallCategories(stallId: Long): List<StallCategoryResponse> {
+        requireActiveStall(stallId)
+
+        return stallCategoryRepository.findByStallId(stallId).map { category ->
+            StallCategoryResponse(category.id, category.name)
+        }
+    }
+
+    private fun requireActiveStall(stallId: Long) {
+        val stall = stallRepository.findById(stallId).orElseThrow { StallNotFoundException() }
+        if (!stall.active) {
+            throw StallNotFoundException()
         }
     }
 }

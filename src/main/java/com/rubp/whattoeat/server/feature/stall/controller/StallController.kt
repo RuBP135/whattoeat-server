@@ -29,4 +29,9 @@ class StallController(
     fun listCategories(): List<StallCategoryResponse> {
         return stallService.listCategories()
     }
+
+    @GetMapping("/{stallId}/categories")
+    fun listStallCategories(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
+        return stallService.listStallCategories(stallId)
+    }
 }
