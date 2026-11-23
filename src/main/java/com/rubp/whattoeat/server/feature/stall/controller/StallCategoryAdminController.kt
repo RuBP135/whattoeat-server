@@ -1,7 +1,6 @@
 package com.rubp.whattoeat.server.feature.stall.controller
 
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryRequest
-import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import com.rubp.whattoeat.server.feature.stall.service.StallCategoryAdminService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -17,8 +16,8 @@ class StallCategoryAdminController(
     private val stallCategoryAdminService: StallCategoryAdminService
 ) {
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    fun createCategory(@Valid @RequestBody request: StallCategoryRequest): StallCategoryResponse {
-        return stallCategoryAdminService.createCategory(request)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun createCategory(@Valid @RequestBody request: StallCategoryRequest) {
+        stallCategoryAdminService.createCategory(request)
     }
 }
