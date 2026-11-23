@@ -31,4 +31,24 @@ interface StallCategoryRepository : JpaRepository<StallCategoryEntry, Long> {
         nativeQuery = true
     )
     fun updateName(@Param("categoryId") categoryId: Long, @Param("name") name: String): Int
+
+    @Modifying
+    @Query(
+        value = """
+        delete from stall_category_link
+        where category_id = :categoryId
+        """,
+        nativeQuery = true
+    )
+    fun deleteStallLinksByCategoryId(@Param("categoryId") categoryId: Long): Int
+
+    @Modifying
+    @Query(
+        value = """
+        delete from stall_category
+        where id = :categoryId
+        """,
+        nativeQuery = true
+    )
+    fun deleteCategoryById(@Param("categoryId") categoryId: Long): Int
 }

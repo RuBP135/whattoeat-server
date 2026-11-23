@@ -4,6 +4,7 @@ import com.rubp.whattoeat.server.feature.stall.model.StallCategoryRequest
 import com.rubp.whattoeat.server.feature.stall.service.StallCategoryAdminService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -30,5 +31,11 @@ class StallCategoryAdminController(
         @Valid @RequestBody request: StallCategoryRequest
     ) {
         stallCategoryAdminService.renameCategory(categoryId, request)
+    }
+
+    @DeleteMapping("/{categoryId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteCategory(@PathVariable("categoryId") categoryId: Long) {
+        stallCategoryAdminService.deleteCategory(categoryId)
     }
 }

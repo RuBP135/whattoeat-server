@@ -8,6 +8,7 @@ import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryNotFoundEx
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryRequest
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class StallCategoryAdminService(
@@ -28,6 +29,14 @@ class StallCategoryAdminService(
             throw categoryWriteFailure(exception)
         }
         if (matchedRows == 0) {
+            throw StallCategoryNotFoundException()
+        }
+    }
+
+    @Transactional
+    fun deleteCategory(categoryId: Long) {
+        stallCategoryRepository.deleteStallLinksByCategoryId(categoryId)
+        if (stallCategoryRepository.deleteCategoryById(categoryId) == 0) {
             throw StallCategoryNotFoundException()
         }
     }
