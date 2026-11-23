@@ -6,7 +6,6 @@ import com.rubp.whattoeat.server.feature.stall.data.StallCategoryRepository
 import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryAlreadyExistsException
 import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryNotFoundException
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryRequest
-import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 
@@ -22,7 +21,7 @@ class StallCategoryAdminService(
         }
     }
 
-    fun renameCategory(categoryId: Long, request: StallCategoryRequest): StallCategoryResponse {
+    fun renameCategory(categoryId: Long, request: StallCategoryRequest) {
         val matchedRows = try {
             stallCategoryRepository.updateName(categoryId, request.name)
         } catch (exception: DataIntegrityViolationException) {
@@ -31,7 +30,6 @@ class StallCategoryAdminService(
         if (matchedRows == 0) {
             throw StallCategoryNotFoundException()
         }
-        return StallCategoryResponse(categoryId, request.name)
     }
 
     private fun categoryWriteFailure(exception: DataIntegrityViolationException): RuntimeException {

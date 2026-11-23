@@ -1,7 +1,6 @@
 package com.rubp.whattoeat.server.feature.stall.controller
 
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryRequest
-import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import com.rubp.whattoeat.server.feature.stall.service.StallCategoryAdminService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -25,10 +24,11 @@ class StallCategoryAdminController(
     }
 
     @PatchMapping("/{categoryId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun renameCategory(
         @PathVariable("categoryId") categoryId: Long,
         @Valid @RequestBody request: StallCategoryRequest
-    ): StallCategoryResponse {
-        return stallCategoryAdminService.renameCategory(categoryId, request)
+    ) {
+        stallCategoryAdminService.renameCategory(categoryId, request)
     }
 }
