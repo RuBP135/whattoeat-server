@@ -15,4 +15,10 @@ class StallExceptionHandler {
     fun handleStallNotFound(): ErrorResponse {
         return ErrorResponse("STALL_NOT_FOUND", "档口不存在")
     }
+
+    @ExceptionHandler(StallCategoryAlreadyExistsException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleStallCategoryNameAlreadyExists(): ErrorResponse {
+        return ErrorResponse("STALL_CATEGORY_NAME_EXISTS", "分类名称已存在")
+    }
 }
