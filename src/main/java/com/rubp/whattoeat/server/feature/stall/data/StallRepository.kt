@@ -18,6 +18,27 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
 
     @Query(
         """
+            select stall
+            from StallEntry stall
+            join fetch stall.location location
+            where (:locationId is null or location.id = :locationId)
+            and (:active is null or stall.active = :active)
+            and (:categoryId is null or exists (
+                select 1
+                from stall.categories category
+                where category.id = :categoryId
+            ))
+            order by location.id, stall.slot, stall.id
+        """
+    )
+    fun findStalls(
+        @Param("locationId") locationId: Long?,
+        @Param("categoryId") categoryId: Long?,
+        @Param("active") active: Boolean?
+    ): List<StallEntry>
+
+    @Query(
+        """
         select stall
         from StallEntry stall
         join fetch stall.location
