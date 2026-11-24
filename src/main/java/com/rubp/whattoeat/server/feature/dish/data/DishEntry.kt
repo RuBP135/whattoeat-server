@@ -1,5 +1,6 @@
-package com.rubp.whattoeat.server.feature.stall.data
+package com.rubp.whattoeat.server.feature.dish.data
 
+import com.rubp.whattoeat.server.feature.stall.data.StallEntry
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType

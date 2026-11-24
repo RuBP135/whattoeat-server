@@ -1,6 +1,5 @@
 package com.rubp.whattoeat.server.feature.stall.controller
 
-import com.rubp.whattoeat.server.feature.stall.model.DishResponse
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import com.rubp.whattoeat.server.feature.stall.model.StallResponse
 import com.rubp.whattoeat.server.feature.stall.service.StallService
@@ -21,11 +20,6 @@ class StallController(
         @RequestParam("locationId", required = false) locationId: Long?
     ): List<StallResponse> {
         return stallService.listStalls(categoryId, locationId)
-    }
-
-    @GetMapping("/{stallId}/dishes")
-    fun listDishes(@PathVariable("stallId") stallId: Long): List<DishResponse> {
-        return stallService.listDishes(stallId)
     }
 
     @GetMapping("/categories")

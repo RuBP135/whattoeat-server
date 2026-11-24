@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.feature.stall.data
+package com.rubp.whattoeat.server.feature.dish.data
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
