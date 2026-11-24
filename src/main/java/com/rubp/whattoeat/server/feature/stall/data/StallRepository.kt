@@ -11,7 +11,7 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         from StallEntry stall
         join fetch stall.location
         where stall.active = true
-        order by stall.location.id, stall.name
+        order by stall.location.id, stall.slot
         """
     )
     fun findActiveStalls(): List<StallEntry>
@@ -23,7 +23,7 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         join fetch stall.location
         where stall.active = true
           and stall.location.id = :locationId
-        order by stall.location.id, stall.name
+        order by stall.location.id, stall.slot
         """
     )
     fun findActiveStallsByLocationId(@Param("locationId") locationId: Long): List<StallEntry>
@@ -36,7 +36,7 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         join stall.categories category
         where stall.active = true
           and category.id = :categoryId
-        order by stall.location.id, stall.name
+        order by stall.location.id, stall.slot
         """
     )
     fun findActiveStallsByCategoryId(@Param("categoryId") categoryId: Long): List<StallEntry>
@@ -50,7 +50,7 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         where stall.active = true
           and stall.location.id = :locationId
           and category.id = :categoryId
-        order by stall.location.id, stall.name
+        order by stall.location.id, stall.slot
         """
     )
     fun findActiveStallsByLocationIdAndCategoryId(

@@ -17,6 +17,9 @@ class StallEntry(
     @Id
     var id: Long,
 
+    @Column(nullable = false)
+    var slot: Int,
+
     @Column(nullable = false, length = 100)
     var name: String,
 

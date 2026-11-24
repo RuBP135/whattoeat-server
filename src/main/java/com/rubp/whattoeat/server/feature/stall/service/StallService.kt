@@ -27,7 +27,7 @@ class StallService(
         }
 
         return stalls.map { stall ->
-            StallResponse(stall.id, stall.name, stall.location.id)
+            StallResponse(stall.id, stall.slot, stall.name, stall.location.id)
         }
     }
 
