@@ -57,4 +57,15 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         @Param("locationId") locationId: Long,
         @Param("categoryId") categoryId: Long
     ): List<StallEntry>
+
+    @Query(
+        value = """
+        select id
+        from stall
+        where id = :stallId
+        for update
+        """,
+        nativeQuery = true
+    )
+    fun findIdForUpdate(@Param("stallId") stallId: Long): Long?
 }

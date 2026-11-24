@@ -27,4 +27,10 @@ class StallExceptionHandler {
     fun handleStallCategoryNotFound(): ErrorResponse {
         return ErrorResponse("STALL_CATEGORY_NOT_FOUND", "分类不存在")
     }
+
+    @ExceptionHandler(StallCategoryUnavailableException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleStallCategoryUnavailable(): ErrorResponse {
+        return ErrorResponse("STALL_CATEGORY_UNAVAILABLE", "分类不可用")
+    }
 }
