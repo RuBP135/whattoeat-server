@@ -8,17 +8,6 @@ import java.util.Optional
 interface StallRepository : JpaRepository<StallEntry, Long> {
     @Query(
         """
-        select stall
-        from StallEntry stall
-        join fetch stall.location
-        where stall.active = true
-        order by stall.location.id, stall.slot
-        """
-    )
-    fun findActiveStalls(): List<StallEntry>
-
-    @Query(
-        """
             select stall
             from StallEntry stall
             join fetch stall.location location
@@ -32,7 +21,7 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
             order by location.id, stall.slot, stall.id
         """
     )
-    fun findStalls(
+    fun findAll(
         @Param("locationId") locationId: Long?,
         @Param("categoryId") categoryId: Long?,
         @Param("active") active: Boolean?
@@ -49,55 +38,13 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
     override fun findById(@Param("id") id: Long): Optional<StallEntry>
 
     @Query(
-        """
-        select stall
-        from StallEntry stall
-        join fetch stall.location
-        where stall.active = true
-          and stall.location.id = :locationId
-        order by stall.location.id, stall.slot
-        """
-    )
-    fun findActiveStallsByLocationId(@Param("locationId") locationId: Long): List<StallEntry>
-
-    @Query(
-        """
-        select stall
-        from StallEntry stall
-        join fetch stall.location
-        join stall.categories category
-        where stall.active = true
-          and category.id = :categoryId
-        order by stall.location.id, stall.slot
-        """
-    )
-    fun findActiveStallsByCategoryId(@Param("categoryId") categoryId: Long): List<StallEntry>
-
-    @Query(
-        """
-        select stall
-        from StallEntry stall
-        join fetch stall.location
-        join stall.categories category
-        where stall.active = true
-          and stall.location.id = :locationId
-          and category.id = :categoryId
-        order by stall.location.id, stall.slot
-        """
-    )
-    fun findActiveStallsByLocationIdAndCategoryId(
-        @Param("locationId") locationId: Long,
-        @Param("categoryId") categoryId: Long
-    ): List<StallEntry>
-
-    @Query(
         value = """
         select id
         from stall
-        where id = :stallId
+        where id = :id
         for update
         """,
         nativeQuery = true
     )
-    fun findIdForUpdate(@Param("stallId") stallId: Long): Long?
+    fun findIdForUpdate(@Param("id") id: Long): Long?
 }

@@ -13,17 +13,7 @@ class StallService(
     private val stallCategoryRepository: StallCategoryRepository
 ) {
     fun listStalls(categoryId: Long?, locationId: Long?): List<StallResponse> {
-        val stalls = if (categoryId != null && locationId != null) {
-            stallRepository.findActiveStallsByLocationIdAndCategoryId(locationId, categoryId)
-        } else if (locationId != null) {
-            stallRepository.findActiveStallsByLocationId(locationId)
-        } else if (categoryId != null) {
-            stallRepository.findActiveStallsByCategoryId(categoryId)
-        } else {
-            stallRepository.findActiveStalls()
-        }
-
-        return stalls.map { stall ->
+        return stallRepository.findAll(locationId = locationId, categoryId = categoryId, active = true).map { stall ->
             StallResponse(stall.id, stall.slot, stall.name, stall.location.id)
         }
     }

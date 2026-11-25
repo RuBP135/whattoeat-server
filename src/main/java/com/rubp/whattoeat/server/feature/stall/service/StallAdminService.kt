@@ -15,7 +15,7 @@ class StallAdminService(
     private val stallCategoryRepository: StallCategoryRepository
 ) {
     fun listStalls(locationId: Long?, categoryId: Long?, active: Boolean?): List<AdminStallResponse> {
-        return stallRepository.findStalls(locationId, categoryId, active).map { stall ->
+        return stallRepository.findAll(locationId, categoryId, active).map { stall ->
             AdminStallResponse(stall.id, stall.slot, stall.name, stall.location.id, stall.active)
         }
     }
