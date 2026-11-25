@@ -1,5 +1,6 @@
 package com.rubp.whattoeat.server.core.config
 
+import com.rubp.whattoeat.server.core.web.error.ErrorResponseFactory
 import org.springframework.context.MessageSource
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -27,5 +28,13 @@ class I18nConfig : WebMvcConfigurer {
             setDefaultEncoding(StandardCharsets.UTF_8.name())
             setFallbackToSystemLocale(false)
         }
+    }
+
+    @Bean
+    fun errorResponseFactory(
+        messageSource: MessageSource,
+        localeResolver: LocaleResolver
+    ): ErrorResponseFactory {
+        return ErrorResponseFactory(messageSource, localeResolver)
     }
 }
