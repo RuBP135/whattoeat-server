@@ -39,4 +39,10 @@ class StallExceptionHandler {
     fun handleLocationUnavailable(): ErrorResponse {
         return ErrorResponse("LOCATION_UNAVAILABLE", "地点不可用")
     }
+
+    @ExceptionHandler(StallSlotOccupiedException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleStallSlotOccupied(): ErrorResponse {
+        return ErrorResponse("STALL_SLOT_OCCUPIED", "该档口位置已有一个在售的档口")
+    }
 }

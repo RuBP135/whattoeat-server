@@ -1,8 +1,10 @@
 package com.rubp.whattoeat.server.feature.stall.data
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
 
 interface StallRepository : JpaRepository<StallEntry, Long> {
@@ -36,6 +38,25 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         """
     )
     override fun findById(@Param("id") id: Long): Optional<StallEntry>
+
+    @Modifying
+    @Transactional
+    @Query(
+        value = """
+        update stall
+        set slot = coalesce(:slot, slot),
+            name = coalesce(:name, name),
+            location_id = coalesce(:locationId, location_id)
+        where id = :id
+        """,
+        nativeQuery = true
+    )
+    fun updateById(
+        @Param("id") id: Long,
+        @Param("slot") slot: Int?,
+        @Param("name") name: String?,
+        @Param("locationId") locationId: Long?
+    ): Int
 
     @Query(
         value = """

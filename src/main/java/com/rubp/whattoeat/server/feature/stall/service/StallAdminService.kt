@@ -1,5 +1,6 @@
 package com.rubp.whattoeat.server.feature.stall.service
 
+import com.rubp.whattoeat.server.core.data.isUniqueViolation
 import com.rubp.whattoeat.server.feature.location.data.LocationRepository
 import com.rubp.whattoeat.server.feature.stall.data.StallCategoryRepository
 import com.rubp.whattoeat.server.feature.stall.data.StallEntry
@@ -7,10 +8,13 @@ import com.rubp.whattoeat.server.feature.stall.data.StallRepository
 import com.rubp.whattoeat.server.feature.stall.exception.LocationUnavailableException
 import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryUnavailableException
 import com.rubp.whattoeat.server.feature.stall.exception.StallNotFoundException
+import com.rubp.whattoeat.server.feature.stall.exception.StallSlotOccupiedException
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
 import com.rubp.whattoeat.server.feature.stall.model.CreateStallRequest
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
+import com.rubp.whattoeat.server.feature.stall.model.UpdateStallRequest
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -49,6 +53,28 @@ class StallAdminService(
         )
 
         return AdminStallResponse(stall.id, stall.slot, stall.name, location.id, stall.active)
+    }
+
+    fun updateStall(stallId: Long, request: UpdateStallRequest) {
+        val locationId = request.locationId
+        if (locationId != null) {
+            locationRepository.findById(locationId).orElseThrow {
+                requireStall(stallId)
+                LocationUnavailableException()
+            }
+        }
+
+        val updated = try {
+            stallRepository.updateById(stallId, request.slot, request.name, locationId)
+        } catch (exception: DataIntegrityViolationException) {
+            if (exception.isUniqueViolation("uk_stall_location_active_slot")) {
+                throw StallSlotOccupiedException()
+            }
+            throw exception
+        }
+        if (updated == 0) {
+            requireStall(stallId)
+        }
     }
 
     @Transactional
