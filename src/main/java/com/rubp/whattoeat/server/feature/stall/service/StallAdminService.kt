@@ -6,6 +6,7 @@ import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryUnavailabl
 import com.rubp.whattoeat.server.feature.stall.exception.StallNotFoundException
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
+import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,6 +26,15 @@ class StallAdminService(
         return AdminStallResponse(stall.id, stall.slot, stall.name, stall.location.id, stall.active)
     }
 
+    @Transactional(readOnly = true)
+    fun listStallCategories(stallId: Long): List<StallCategoryResponse> {
+        requireStall(stallId)
+
+        return stallCategoryRepository.findByStallId(stallId).map { category ->
+            StallCategoryResponse(category.id, category.name)
+        }
+    }
+
     @Transactional
     fun replaceCategories(stallId: Long, request: ReplaceStallCategoriesRequest) {
         if (stallRepository.findIdForUpdate(stallId) == null) {
@@ -39,5 +49,9 @@ class StallAdminService(
                 throw StallCategoryUnavailableException()
             }
         }
+    }
+
+    private fun requireStall(stallId: Long) {
+        stallRepository.findById(stallId).orElseThrow { StallNotFoundException() }
     }
 }

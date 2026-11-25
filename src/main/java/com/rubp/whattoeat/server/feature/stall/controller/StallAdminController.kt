@@ -2,6 +2,7 @@ package com.rubp.whattoeat.server.feature.stall.controller
 
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
+import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import com.rubp.whattoeat.server.feature.stall.service.StallAdminService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -30,6 +31,11 @@ class StallAdminController(
     @GetMapping("/{stallId}")
     fun getStall(@PathVariable("stallId") stallId: Long): AdminStallResponse {
         return stallAdminService.getStall(stallId)
+    }
+
+    @GetMapping("/{stallId}/categories")
+    fun listStallCategories(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
+        return stallAdminService.listStallCategories(stallId)
     }
 
     @PutMapping("/{stallId}/categories")
