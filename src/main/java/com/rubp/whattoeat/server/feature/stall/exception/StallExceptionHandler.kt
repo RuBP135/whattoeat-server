@@ -33,4 +33,10 @@ class StallExceptionHandler {
     fun handleStallCategoryUnavailable(): ErrorResponse {
         return ErrorResponse("STALL_CATEGORY_UNAVAILABLE", "分类不可用")
     }
+
+    @ExceptionHandler(LocationUnavailableException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleLocationUnavailable(): ErrorResponse {
+        return ErrorResponse("LOCATION_UNAVAILABLE", "地点不可用")
+    }
 }

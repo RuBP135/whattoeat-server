@@ -1,10 +1,14 @@
 package com.rubp.whattoeat.server.feature.stall.service
 
+import com.rubp.whattoeat.server.feature.location.data.LocationRepository
 import com.rubp.whattoeat.server.feature.stall.data.StallCategoryRepository
+import com.rubp.whattoeat.server.feature.stall.data.StallEntry
 import com.rubp.whattoeat.server.feature.stall.data.StallRepository
+import com.rubp.whattoeat.server.feature.stall.exception.LocationUnavailableException
 import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryUnavailableException
 import com.rubp.whattoeat.server.feature.stall.exception.StallNotFoundException
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
+import com.rubp.whattoeat.server.feature.stall.model.CreateStallRequest
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import org.springframework.stereotype.Service
@@ -13,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class StallAdminService(
     private val stallRepository: StallRepository,
-    private val stallCategoryRepository: StallCategoryRepository
+    private val stallCategoryRepository: StallCategoryRepository,
+    private val locationRepository: LocationRepository
 ) {
     fun listStalls(locationId: Long?, categoryId: Long?, active: Boolean?): List<AdminStallResponse> {
         return stallRepository.findAll(locationId, categoryId, active).map { stall ->
@@ -33,6 +38,17 @@ class StallAdminService(
         return stallCategoryRepository.findByStallId(stallId).map { category ->
             StallCategoryResponse(category.id, category.name)
         }
+    }
+
+    @Transactional
+    fun createStall(request: CreateStallRequest): AdminStallResponse {
+        val location = locationRepository.findById(request.locationId)
+            .orElseThrow { LocationUnavailableException() }
+        val stall = stallRepository.save(
+            StallEntry(slot = request.slot, name = request.name, location = location, active = false)
+        )
+
+        return AdminStallResponse(stall.id, stall.slot, stall.name, location.id, stall.active)
     }
 
     @Transactional

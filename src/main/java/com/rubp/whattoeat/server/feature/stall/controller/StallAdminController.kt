@@ -1,12 +1,15 @@
 package com.rubp.whattoeat.server.feature.stall.controller
 
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
+import com.rubp.whattoeat.server.feature.stall.model.CreateStallRequest
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import com.rubp.whattoeat.server.feature.stall.service.StallAdminService
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -36,6 +39,12 @@ class StallAdminController(
     @GetMapping("/{stallId}/categories")
     fun listStallCategories(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
         return stallAdminService.listStallCategories(stallId)
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createStall(@Valid @RequestBody request: CreateStallRequest): AdminStallResponse {
+        return stallAdminService.createStall(request)
     }
 
     @PutMapping("/{stallId}/categories")
