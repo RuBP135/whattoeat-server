@@ -26,7 +26,7 @@ class StallCategoryAdminService(
 
     fun renameCategory(categoryId: Long, request: StallCategoryRequest) {
         val matchedRows = try {
-            stallCategoryRepository.updateName(categoryId, request.name)
+            stallCategoryRepository.updateNameById(categoryId, request.name)
         } catch (exception: DataIntegrityViolationException) {
             throw categoryWriteFailure(exception)
         }
@@ -37,8 +37,8 @@ class StallCategoryAdminService(
 
     @Transactional
     fun deleteCategory(categoryId: Long) {
-        stallCategoryRepository.deleteStallLinksByCategoryId(categoryId)
-        if (stallCategoryRepository.deleteCategoryById(categoryId) == 0) {
+        stallCategoryRepository.deleteLinksByCategoryId(categoryId)
+        if (stallCategoryRepository.removeById(categoryId) == 0) {
             throw StallCategoryNotFoundException()
         }
     }
