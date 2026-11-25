@@ -1,11 +1,15 @@
 package com.rubp.whattoeat.server.core.web.error;
 
+import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
+import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
+import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
@@ -21,6 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,11 +38,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ErrorResponseI18nTest.ProbeController.class, properties = "spring.profiles.active=test")
-@Import({SecurityConfig.class, ErrorResponseI18nTest.ProbeController.class})
+@Import({SecurityConfig.class, JwtTokenService.class, ErrorResponseI18nTest.ProbeController.class})
 public class ErrorResponseI18nTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtTokenService jwtTokenService;
 
     @DynamicPropertySource
     static void jwtProperties(DynamicPropertyRegistry registry) throws Exception {
@@ -104,6 +114,24 @@ public class ErrorResponseI18nTest {
     }
 
     @Test
+    public void securityForbidden_shouldReturnLocalizedMessage() throws Exception {
+        String accessToken = jwtTokenService.createToken(123L, Role.USER, JwtTokenType.ACCESS);
+
+        mockMvc.perform(post("/api/admin/test/protected")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
+                .andExpect(jsonPath("$.message").value("权限不足"));
+
+        mockMvc.perform(post("/api/admin/test/protected")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, "en-US"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
     public void messageBundles_shouldHaveMatchingNonBlankEntries() throws IOException {
         Properties zhMessages = loadProperties("i18n/messages.properties");
         Properties enMessages = loadProperties("i18n/messages_en.properties");
@@ -136,10 +164,19 @@ public class ErrorResponseI18nTest {
         @PostMapping("/api/test/protected")
         public void protectedEndpoint() {
         }
+
+        @PostMapping("/api/admin/test/protected")
+        public void adminProtectedEndpoint() {
+        }
     }
 
     @TestConfiguration(proxyBeanMethods = false)
     @EnableWebSecurity
     static class TestConfig {
+
+        @Bean
+        Clock clock() {
+            return Clock.fixed(Instant.now(), ZoneOffset.UTC);
+        }
     }
 }
