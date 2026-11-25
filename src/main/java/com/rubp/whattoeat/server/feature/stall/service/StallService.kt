@@ -30,7 +30,7 @@ class StallService(
         }
     }
 
-    fun listStallCategories(stallId: Long): List<StallCategoryResponse> {
+    fun listCategoriesByStallId(stallId: Long): List<StallCategoryResponse> {
         requireActiveStall(stallId)
 
         return stallCategoryRepository.findByStallId(stallId).map { category ->

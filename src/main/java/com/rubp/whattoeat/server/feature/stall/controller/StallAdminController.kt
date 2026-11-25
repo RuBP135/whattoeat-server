@@ -41,8 +41,8 @@ class StallAdminController(
     }
 
     @GetMapping("/{stallId}/categories")
-    fun listStallCategories(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
-        return stallAdminService.listStallCategories(stallId)
+    fun listCategoriesByStallId(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
+        return stallAdminService.listCategoriesByStallId(stallId)
     }
 
     @PostMapping

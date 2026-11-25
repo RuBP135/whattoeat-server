@@ -33,7 +33,7 @@ class StallController(
     }
 
     @GetMapping("/{stallId}/categories")
-    fun listStallCategories(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
-        return stallService.listStallCategories(stallId)
+    fun listCategoriesByStallId(@PathVariable("stallId") stallId: Long): List<StallCategoryResponse> {
+        return stallService.listCategoriesByStallId(stallId)
     }
 }

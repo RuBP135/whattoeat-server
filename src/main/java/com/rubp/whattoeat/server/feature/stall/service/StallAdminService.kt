@@ -37,7 +37,7 @@ class StallAdminService(
     }
 
     @Transactional(readOnly = true)
-    fun listStallCategories(stallId: Long): List<StallCategoryResponse> {
+    fun listCategoriesByStallId(stallId: Long): List<StallCategoryResponse> {
         requireStall(stallId)
 
         return stallCategoryRepository.findByStallId(stallId).map { category ->
