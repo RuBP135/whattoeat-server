@@ -9,6 +9,7 @@ import com.rubp.whattoeat.server.feature.stall.model.UpdateStallRequest
 import com.rubp.whattoeat.server.feature.stall.service.StallAdminService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -75,5 +76,11 @@ class StallAdminController(
         @RequestBody request: ReplaceStallCategoriesRequest
     ) {
         stallAdminService.replaceCategories(stallId, request)
+    }
+
+    @DeleteMapping("/{stallId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteStall(@PathVariable("stallId") stallId: Long) {
+        stallAdminService.deleteStall(stallId)
     }
 }

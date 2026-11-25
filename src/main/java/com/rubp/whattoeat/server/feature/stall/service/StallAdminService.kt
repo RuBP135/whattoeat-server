@@ -108,6 +108,13 @@ class StallAdminService(
         }
     }
 
+    @Transactional
+    fun deleteStall(stallId: Long) {
+        stallRepository.findIdForUpdate(stallId) ?: throw StallNotFoundException()
+        stallCategoryRepository.deleteLinksByStallId(stallId)
+        stallRepository.deleteById(stallId)
+    }
+
     private fun requireStall(stallId: Long) {
         stallRepository.findById(stallId).orElseThrow { StallNotFoundException() }
     }
