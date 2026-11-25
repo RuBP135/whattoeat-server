@@ -1,6 +1,7 @@
 package com.rubp.whattoeat.server.feature.stall.service
 
 import com.rubp.whattoeat.server.feature.stall.data.StallCategoryRepository
+import com.rubp.whattoeat.server.feature.stall.data.StallEntry
 import com.rubp.whattoeat.server.feature.stall.data.StallRepository
 import com.rubp.whattoeat.server.feature.stall.exception.StallNotFoundException
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
@@ -18,6 +19,11 @@ class StallService(
         }
     }
 
+    fun getStall(stallId: Long): StallResponse {
+        val stall = requireActiveStall(stallId)
+        return StallResponse(stall.id, stall.slot, stall.name, stall.location.id)
+    }
+
     fun listCategories(): List<StallCategoryResponse> {
         return stallCategoryRepository.findAllByOrderByIdAsc().map { category ->
             StallCategoryResponse(category.id, category.name)
@@ -32,10 +38,11 @@ class StallService(
         }
     }
 
-    fun requireActiveStall(stallId: Long) {
+    fun requireActiveStall(stallId: Long): StallEntry {
         val stall = stallRepository.findById(stallId).orElseThrow { StallNotFoundException() }
         if (!stall.active) {
             throw StallNotFoundException()
         }
+        return stall
     }
 }
