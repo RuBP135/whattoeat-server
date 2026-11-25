@@ -58,6 +58,18 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         @Param("locationId") locationId: Long?
     ): Int
 
+    @Modifying
+    @Transactional
+    @Query(
+        value = """
+        update stall
+        set active = :active
+        where id = :id
+        """,
+        nativeQuery = true
+    )
+    fun updateActiveById(@Param("id") id: Long, @Param("active") active: Boolean): Int
+
     @Query(
         value = """
         select id

@@ -10,6 +10,7 @@ import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryUnavailabl
 import com.rubp.whattoeat.server.feature.stall.exception.StallNotFoundException
 import com.rubp.whattoeat.server.feature.stall.exception.StallSlotOccupiedException
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
+import com.rubp.whattoeat.server.feature.stall.model.ChangeStallActiveRequest
 import com.rubp.whattoeat.server.feature.stall.model.CreateStallRequest
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
@@ -74,6 +75,20 @@ class StallAdminService(
         }
         if (updated == 0) {
             requireStall(stallId)
+        }
+    }
+
+    fun changeStallActive(stallId: Long, request: ChangeStallActiveRequest) {
+        val updated = try {
+            stallRepository.updateActiveById(stallId, request.active)
+        } catch (exception: DataIntegrityViolationException) {
+            if (exception.isUniqueViolation("uk_stall_location_active_slot")) {
+                throw StallSlotOccupiedException()
+            }
+            throw exception
+        }
+        if (updated == 0) {
+            throw StallNotFoundException()
         }
     }
 

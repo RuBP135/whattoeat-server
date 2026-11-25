@@ -1,6 +1,7 @@
 package com.rubp.whattoeat.server.feature.stall.controller
 
 import com.rubp.whattoeat.server.feature.stall.model.AdminStallResponse
+import com.rubp.whattoeat.server.feature.stall.model.ChangeStallActiveRequest
 import com.rubp.whattoeat.server.feature.stall.model.CreateStallRequest
 import com.rubp.whattoeat.server.feature.stall.model.ReplaceStallCategoriesRequest
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
@@ -56,6 +57,15 @@ class StallAdminController(
         @Valid @RequestBody request: UpdateStallRequest
     ) {
         stallAdminService.updateStall(stallId, request)
+    }
+
+    @PutMapping("/{stallId}/active")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun changeStallActive(
+        @PathVariable("stallId") stallId: Long,
+        @RequestBody request: ChangeStallActiveRequest
+    ) {
+        stallAdminService.changeStallActive(stallId, request)
     }
 
     @PutMapping("/{stallId}/categories")
