@@ -24,13 +24,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private final ErrorResponseFactory errorResponseFactory;
+
+    public GlobalExceptionHandler(ErrorResponseFactory errorResponseFactory) {
+        this.errorResponseFactory = errorResponseFactory;
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleUnexpectedFailure(Exception exception) {
         log.error("Unexpected exception", exception);
-        return new ErrorResponse(
+        return errorResponseFactory.create(
                 "INTERNAL_SERVER_ERROR",
-                "服务器内部错误"
+                "error.internal_server_error"
         );
     }
 
@@ -43,7 +49,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ) {
         return handleExceptionInternal(
                 exception,
-                new ErrorResponse("INVALID_REQUEST", "请求参数无效"),
+                errorResponseFactory.create("INVALID_REQUEST", "error.request.invalid_parameter"),
                 headers,
                 status,
                 request
@@ -59,7 +65,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ) {
         return handleExceptionInternal(
                 exception,
-                new ErrorResponse("INVALID_REQUEST", "请求体格式无效"),
+                errorResponseFactory.create("INVALID_REQUEST", "error.request.invalid_body"),
                 headers,
                 status,
                 request
@@ -76,22 +82,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ) {
         if (statusCode.is5xxServerError()) {
             log.error("Failed to process request", exception);
-            body = new ErrorResponse("INTERNAL_SERVER_ERROR", "服务器内部错误");
+            body = errorResponseFactory.create("INTERNAL_SERVER_ERROR", "error.internal_server_error");
         } else if (!(body instanceof ErrorResponse)) {
             HttpStatus status = HttpStatus.resolve(statusCode.value());
             String code = status == null ? "REQUEST_FAILED" : status.name();
             if (statusCode.value() == HttpStatus.BAD_REQUEST.value()) {
                 code = "INVALID_REQUEST";
             }
-            String message = switch (statusCode.value()) {
-                case 400 -> "请求参数无效";
-                case 404 -> "请求的资源不存在";
-                case 405 -> "请求方法不支持";
-                case 406 -> "无法提供请求所需的响应格式";
-                case 415 -> "请求体格式不支持";
-                default -> "请求处理失败";
+            body = switch (statusCode.value()) {
+                case 400 -> errorResponseFactory.create(code, "error.request.invalid_parameter");
+                case 404 -> errorResponseFactory.create(code, "error.http.not_found");
+                case 405 -> errorResponseFactory.create(code, "error.http.method_not_allowed");
+                case 406 -> errorResponseFactory.create(code, "error.http.not_acceptable");
+                case 415 -> errorResponseFactory.create(code, "error.http.unsupported_media_type");
+                default -> errorResponseFactory.create(code, "error.http.request_failed");
             };
-            body = new ErrorResponse(code, message);
         }
 
         return super.handleExceptionInternal(exception, body, headers, statusCode, request);
