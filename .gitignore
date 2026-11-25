@@ -49,3 +49,4 @@ build/
 
 ### other ###
 docs/local/
+.mcp.json

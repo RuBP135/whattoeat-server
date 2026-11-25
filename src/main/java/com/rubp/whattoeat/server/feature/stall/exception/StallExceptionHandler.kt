@@ -27,4 +27,22 @@ class StallExceptionHandler {
     fun handleStallCategoryNotFound(): ErrorResponse {
         return ErrorResponse("STALL_CATEGORY_NOT_FOUND", "分类不存在")
     }
+
+    @ExceptionHandler(StallCategoryUnavailableException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleStallCategoryUnavailable(): ErrorResponse {
+        return ErrorResponse("STALL_CATEGORY_UNAVAILABLE", "分类不可用")
+    }
+
+    @ExceptionHandler(LocationUnavailableException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleLocationUnavailable(): ErrorResponse {
+        return ErrorResponse("LOCATION_UNAVAILABLE", "地点不可用")
+    }
+
+    @ExceptionHandler(StallSlotOccupiedException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleStallSlotOccupied(): ErrorResponse {
+        return ErrorResponse("STALL_SLOT_OCCUPIED", "该档口位置已有一个在售的档口")
+    }
 }

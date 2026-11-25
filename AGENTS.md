@@ -21,15 +21,21 @@ server/
 
 ## 3. 需求未定先对齐
 
-API 字段、业务分支与存储选型未明确时先确认，不脑补复杂流程和多余抽象。
+字段、功能未明确时先确认，不要自己猜测和引入一堆写法
 
 ## 4.依赖引入要求
 
 优先使用 Spring Boot 已管理或现有的组件，引入新依赖需说明理由。
 
-## 5.命名规范
+## 5. 命名规范
 
-变量名、函数名、类名等应该与仓库原有代码的风格一致，不能混搭
+- **整体一致**：变量名、方法名、类名等应与仓库既有代码风格一致，不要混搭。
+- **Repository 层命名**：
+  - **省略主实体名**：依托 `*Repository` 接口上下文，操作主表的方法不重复主实体名（比如应该用 `findAll`、`findById`、`updateNameById`，而不是 `findStalls`、`deleteCategoryById`）。
+  - **规避父接口冲突**：自定义 `@Modifying` 删除需返回受影响行数（`Int`）而无法重写 `CrudRepository.deleteById` 时，改用 `removeById` 就行。
+  - **主表主键命名**：直接按主表主键操作的方法统一体现 `ById`（如 `findById`、`updateNameById`、`removeById`），主键参数统一简写为 `id`。
+  - **关联表命名**：操作关联表（如 `*_link`）的方法统一用 `Links` 指代关联记录（如 `insertLinks`、`deleteLinksByStallId`、`deleteLinksByCategoryId`）；多表外键时保留明确前缀（如 `stallId`、`categoryId`）。
+- **Controller / Service 层命名**：保留业务资源名词以明确用例语义（如列表 `listStalls`、单条 `getStall`、写操作 `createCategory` / `renameCategory` / `deleteCategory`）。
 
 ## 6.指令规范
 

@@ -11,9 +11,10 @@ fun Throwable.isUniqueViolation(): Boolean =
         it is ConstraintViolationException && it.kind == ConstraintKind.UNIQUE
     }
 
-fun Throwable.isUniqueViolation(constraintName: String): Boolean =
-    causes().any {
+fun Throwable.isUniqueViolation(constraintName: String): Boolean {
+    return causes().any {
         it is ConstraintViolationException
                 && it.kind == ConstraintKind.UNIQUE
-                && it.constraintName == constraintName
+                && it.constraintName?.substringAfterLast('.')?.equals(constraintName, ignoreCase = true) == true
     }
+}

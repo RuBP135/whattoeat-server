@@ -6,6 +6,7 @@ import com.rubp.whattoeat.server.feature.stall.data.StallCategoryRepository
 import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryAlreadyExistsException
 import com.rubp.whattoeat.server.feature.stall.exception.StallCategoryNotFoundException
 import com.rubp.whattoeat.server.feature.stall.model.StallCategoryRequest
+import com.rubp.whattoeat.server.feature.stall.model.StallCategoryResponse
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,9 +15,10 @@ import org.springframework.transaction.annotation.Transactional
 class StallCategoryAdminService(
     private val stallCategoryRepository: StallCategoryRepository
 ) {
-    fun createCategory(request: StallCategoryRequest) {
+    fun createCategory(request: StallCategoryRequest): StallCategoryResponse {
         try {
-            stallCategoryRepository.save(StallCategoryEntry(name = request.name))
+            val category = stallCategoryRepository.save(StallCategoryEntry(name = request.name))
+            return StallCategoryResponse(category.id, category.name)
         } catch (exception: DataIntegrityViolationException) {
             throw categoryWriteFailure(exception)
         }
@@ -24,7 +26,7 @@ class StallCategoryAdminService(
 
     fun renameCategory(categoryId: Long, request: StallCategoryRequest) {
         val matchedRows = try {
-            stallCategoryRepository.updateName(categoryId, request.name)
+            stallCategoryRepository.updateNameById(categoryId, request.name)
         } catch (exception: DataIntegrityViolationException) {
             throw categoryWriteFailure(exception)
         }
@@ -35,8 +37,8 @@ class StallCategoryAdminService(
 
     @Transactional
     fun deleteCategory(categoryId: Long) {
-        stallCategoryRepository.deleteStallLinksByCategoryId(categoryId)
-        if (stallCategoryRepository.deleteCategoryById(categoryId) == 0) {
+        stallCategoryRepository.deleteLinksByCategoryId(categoryId)
+        if (stallCategoryRepository.removeById(categoryId) == 0) {
             throw StallCategoryNotFoundException()
         }
     }
