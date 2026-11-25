@@ -1,21 +1,26 @@
 package com.rubp.whattoeat.server.feature.account.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Locale;
 
 @Service
 public class VerificationEmailSender {
 
     private final JavaMailSender mailSender;
+    private final MessageSource messageSource;
     private final String from;
     private final long verificationTtlMinutes;
 
     public VerificationEmailSender(
             JavaMailSender mailSender,
+            MessageSource messageSource,
             @Value("${account.email.from}") String from,
             @Value("${account.email.verification-ttl}") Duration verificationTtl
     ) {
@@ -25,17 +30,29 @@ public class VerificationEmailSender {
         }
 
         this.mailSender = mailSender;
+        this.messageSource = messageSource;
         this.from = from;
         this.verificationTtlMinutes = minutes;
     }
 
     public void sendVerificationCode(String email, String code) {
+        Locale locale = LocaleContextHolder.getLocale();
+        String subject = messageSource.getMessage(
+                "account.email.verification_subject",
+                null,
+                locale
+        );
+        String text = messageSource.getMessage(
+                "account.email.verification_body",
+                new Object[]{code, Long.toString(verificationTtlMinutes)},
+                locale
+        );
+
         var message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(email);
-        message.setSubject("对策选饭/WhatToEat验证码");
-        message.setText("您的验证码是 " + code + "，\n"
-                + "该验证码" + verificationTtlMinutes + "分钟内有效，请勿泄露给他人。");
+        message.setSubject(subject);
+        message.setText(text);
         mailSender.send(message);
     }
 }

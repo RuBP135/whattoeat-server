@@ -8,8 +8,11 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.rubp.whattoeat.server.core.crypto.KeyFileReader;
-import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
+import com.rubp.whattoeat.server.core.web.error.ErrorResponseFactory;
 import com.rubp.whattoeat.server.feature.account.domain.Role;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.PropertyKey;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +31,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
@@ -47,7 +52,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ErrorResponseFactory errorResponseFactory
     ) {
         var authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthoritiesClaimName("role");
@@ -82,24 +88,49 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
-                        .authenticationEntryPoint((request, response, exception) -> {
-                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                            objectMapper.writeValue(
-                                    response.getWriter(),
-                                    new ErrorResponse(
-                                            "INVALID_ACCESS_TOKEN",
-                                            "access token 无效或已过期"
-                                    )
-                            );
-                        })
+                        .authenticationEntryPoint((request, response, exception) -> writeErrorResponse(
+                                request,
+                                response,
+                                HttpStatus.UNAUTHORIZED,
+                                objectMapper,
+                                errorResponseFactory,
+                                "INVALID_ACCESS_TOKEN",
+                                "auth.invalid_access_token"
+                        ))
+                        .accessDeniedHandler((request, response, exception) -> writeErrorResponse(
+                                request,
+                                response,
+                                HttpStatus.FORBIDDEN,
+                                objectMapper,
+                                errorResponseFactory,
+                                "ACCESS_DENIED",
+                                "auth.access_denied"
+                        ))
                         .jwt(jwt -> jwt
                                 .decoder(jwtAccessDecoder)
                                 .jwtAuthenticationConverter(authenticationConverter)
                         )
                 )
                 .build();
+    }
+
+    private void writeErrorResponse(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            HttpStatus status,
+            ObjectMapper objectMapper,
+            ErrorResponseFactory errorResponseFactory,
+            String code,
+            @PropertyKey(resourceBundle = "i18n.messages") String messageKey
+    ) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+        objectMapper.writeValue(
+                response.getWriter(),
+                errorResponseFactory.create(request, code, messageKey)
+        );
     }
 
     @Bean
