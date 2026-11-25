@@ -20,6 +20,11 @@ class StallAdminService(
         }
     }
 
+    fun getStall(stallId: Long): AdminStallResponse {
+        val stall = stallRepository.findById(stallId).orElseThrow { StallNotFoundException() }
+        return AdminStallResponse(stall.id, stall.slot, stall.name, stall.location.id, stall.active)
+    }
+
     @Transactional
     fun replaceCategories(stallId: Long, request: ReplaceStallCategoriesRequest) {
         if (stallRepository.findIdForUpdate(stallId) == null) {

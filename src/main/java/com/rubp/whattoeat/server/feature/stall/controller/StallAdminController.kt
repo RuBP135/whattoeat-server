@@ -27,6 +27,11 @@ class StallAdminController(
         return stallAdminService.listStalls(locationId, categoryId, active)
     }
 
+    @GetMapping("/{stallId}")
+    fun getStall(@PathVariable("stallId") stallId: Long): AdminStallResponse {
+        return stallAdminService.getStall(stallId)
+    }
+
     @PutMapping("/{stallId}/categories")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun replaceCategories(

@@ -3,6 +3,7 @@ package com.rubp.whattoeat.server.feature.stall.data
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.util.Optional
 
 interface StallRepository : JpaRepository<StallEntry, Long> {
     @Query(
@@ -36,6 +37,16 @@ interface StallRepository : JpaRepository<StallEntry, Long> {
         @Param("categoryId") categoryId: Long?,
         @Param("active") active: Boolean?
     ): List<StallEntry>
+
+    @Query(
+        """
+        select stall
+        from StallEntry stall
+        join fetch stall.location
+        where stall.id = :id
+        """
+    )
+    override fun findById(@Param("id") id: Long): Optional<StallEntry>
 
     @Query(
         """
