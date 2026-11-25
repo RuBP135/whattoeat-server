@@ -8,7 +8,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.rubp.whattoeat.server.core.crypto.KeyFileReader;
-import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
+import com.rubp.whattoeat.server.core.web.error.ErrorResponseFactory;
 import com.rubp.whattoeat.server.feature.account.domain.Role;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -28,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
@@ -47,7 +48,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             @Qualifier("jwtAccessDecoder") JwtDecoder jwtAccessDecoder,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ErrorResponseFactory errorResponseFactory
     ) {
         var authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthoritiesClaimName("role");
@@ -85,12 +87,14 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, exception) -> {
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
                             objectMapper.writeValue(
                                     response.getWriter(),
-                                    new ErrorResponse(
+                                    errorResponseFactory.create(
+                                            request,
                                             "INVALID_ACCESS_TOKEN",
-                                            "access token 无效或已过期"
+                                            "auth.invalid_access_token"
                                     )
                             );
                         })
