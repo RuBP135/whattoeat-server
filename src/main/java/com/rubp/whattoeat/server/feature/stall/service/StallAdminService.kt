@@ -1,6 +1,9 @@
 package com.rubp.whattoeat.server.feature.stall.service
 
 import com.rubp.whattoeat.server.core.data.isUniqueViolation
+import com.rubp.whattoeat.server.feature.audit.domain.AuditOperation
+import com.rubp.whattoeat.server.feature.audit.domain.AuditResourceType
+import com.rubp.whattoeat.server.feature.audit.service.AdminAuditService
 import com.rubp.whattoeat.server.feature.location.data.LocationRepository
 import com.rubp.whattoeat.server.feature.stall.data.StallCategoryRepository
 import com.rubp.whattoeat.server.feature.stall.data.StallEntry
@@ -23,7 +26,8 @@ import org.springframework.transaction.annotation.Transactional
 class StallAdminService(
     private val stallRepository: StallRepository,
     private val stallCategoryRepository: StallCategoryRepository,
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val adminAuditService: AdminAuditService
 ) {
     fun listStalls(locationId: Long?, categoryId: Long?, active: Boolean?): List<AdminStallResponse> {
         return stallRepository.findAll(locationId, categoryId, active).map { stall ->
@@ -52,14 +56,24 @@ class StallAdminService(
         val stall = stallRepository.save(
             StallEntry(slot = request.slot, name = request.name, location = location, active = false)
         )
+        adminAuditService.record(
+            AuditOperation.CREATE,
+            AuditResourceType.STALL,
+            stall.id,
+            "audit.stall.create",
+            stall.name,
+            location.name,
+            stall.slot
+        )
 
         return AdminStallResponse(stall.id, stall.slot, stall.name, location.id, stall.active)
     }
 
+    @Transactional
     fun updateStall(stallId: Long, request: UpdateStallRequest) {
         val locationId = request.locationId
-        if (locationId != null) {
-            locationRepository.findById(locationId).orElseThrow {
+        val location = locationId?.let {
+            locationRepository.findById(it).orElseThrow {
                 requireStall(stallId)
                 LocationUnavailableException()
             }
@@ -75,9 +89,20 @@ class StallAdminService(
         }
         if (updated == 0) {
             requireStall(stallId)
+            return
         }
+        adminAuditService.record(
+            AuditOperation.UPDATE,
+            AuditResourceType.STALL,
+            stallId,
+            "audit.stall.update",
+            request.name ?: "-",
+            request.slot ?: "-",
+            location?.name ?: "-"
+        )
     }
 
+    @Transactional
     fun changeStallActive(stallId: Long, request: ChangeStallActiveRequest) {
         val updated = try {
             stallRepository.updateActiveById(stallId, request.active)
@@ -90,6 +115,12 @@ class StallAdminService(
         if (updated == 0) {
             throw StallNotFoundException()
         }
+        adminAuditService.record(
+            AuditOperation.UPDATE,
+            AuditResourceType.STALL,
+            stallId,
+            if (request.active) "audit.stall.activate" else "audit.stall.deactivate"
+        )
     }
 
     @Transactional
@@ -106,6 +137,13 @@ class StallAdminService(
                 throw StallCategoryUnavailableException()
             }
         }
+        adminAuditService.record(
+            AuditOperation.UPDATE,
+            AuditResourceType.STALL,
+            stallId,
+            "audit.stall.categories_updated",
+            categoryIds.sorted()
+        )
     }
 
     @Transactional
@@ -113,6 +151,13 @@ class StallAdminService(
         stallRepository.findIdForUpdate(stallId) ?: throw StallNotFoundException()
         stallCategoryRepository.deleteLinksByStallId(stallId)
         stallRepository.deleteById(stallId)
+        adminAuditService.record(
+            AuditOperation.DELETE,
+            AuditResourceType.STALL,
+            stallId,
+            "audit.stall.delete",
+            stallId
+        )
     }
 
     private fun requireStall(stallId: Long) {
