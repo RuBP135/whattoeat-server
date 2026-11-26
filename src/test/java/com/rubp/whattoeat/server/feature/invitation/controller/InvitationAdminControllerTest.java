@@ -6,7 +6,7 @@ import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
-import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
+import com.rubp.whattoeat.server.feature.invitation.service.InvitationAdminService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,9 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = InvitationController.class, properties = "spring.profiles.active=test")
-@Import({InvitationService.class, JwtTokenService.class, SecurityConfig.class})
-public class InvitationControllerTest {
+@WebMvcTest(controllers = InvitationAdminController.class, properties = "spring.profiles.active=test")
+@Import({InvitationAdminService.class, JwtTokenService.class, SecurityConfig.class})
+public class InvitationAdminControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

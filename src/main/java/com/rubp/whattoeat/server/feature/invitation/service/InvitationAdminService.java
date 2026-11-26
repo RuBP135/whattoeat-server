@@ -18,15 +18,15 @@ import java.time.Duration;
 import java.time.Instant;
 
 @Service
-public class InvitationService {
+public class InvitationAdminService {
 
-    private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
+    private static final Logger log = LoggerFactory.getLogger(InvitationAdminService.class);
 
     private final InvitationRepository invitationRepository;
     private final Clock clock;
     private final Duration ttl;
 
-    public InvitationService(
+    public InvitationAdminService(
             InvitationRepository invitationRepository,
             Clock clock,
             @Value("${invitation.ttl}") Duration ttl
