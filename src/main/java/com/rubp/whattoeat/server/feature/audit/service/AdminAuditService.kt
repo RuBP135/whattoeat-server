@@ -27,6 +27,17 @@ class AdminAuditService(
 ) {
     private val log = LoggerFactory.getLogger(AdminAuditService::class.java)
 
+    /**
+     * 记录管理员操作审计日志。
+     *
+     * 必须在已有事务和已认证管理员上下文中调用。
+     *
+     * @param operation 操作类型
+     * @param resourceType 被操作资源的类型
+     * @param resourceId 被操作资源的 ID；无具体目标资源时可以传 `null`
+     * @param summaryKey 审计摘要的国际化消息键（定义于 `i18n/messages*.properties`，编写新的记录时，你应当先去这里创建模板）
+     * @param summaryArgs 按顺序填充消息模板占位符（`{0}`、`{1}`…）的参数，具体数量与含义应该看你定义的模板
+     */
     @Transactional(propagation = Propagation.MANDATORY)
     fun record(
         operation: AuditOperation,
