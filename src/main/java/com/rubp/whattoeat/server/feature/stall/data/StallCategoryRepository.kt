@@ -20,6 +20,17 @@ interface StallCategoryRepository : JpaRepository<StallCategoryEntry, Long> {
     )
     fun findByStallId(@Param("stallId") stallId: Long): List<StallCategoryEntry>
 
+    @Query(
+        value = """
+        select name
+        from stall_category
+        where id = :id
+        for update
+        """,
+        nativeQuery = true
+    )
+    fun findNameByIdForUpdate(@Param("id") id: Long): String?
+
     @Modifying
     @Transactional
     @Query(
@@ -41,16 +52,6 @@ interface StallCategoryRepository : JpaRepository<StallCategoryEntry, Long> {
         nativeQuery = true
     )
     fun deleteLinksByCategoryId(@Param("categoryId") categoryId: Long): Int
-
-    @Modifying
-    @Query(
-        value = """
-        delete from stall_category
-        where id = :id
-        """,
-        nativeQuery = true
-    )
-    fun removeById(@Param("id") id: Long): Int
 
     @Modifying
     @Query(
