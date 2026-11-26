@@ -15,6 +15,8 @@ import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 
 @Entity
@@ -40,14 +42,18 @@ class AdminAuditLogEntry(
     var resourceType: AuditResourceType,
 
     @Column(name = "resource_id", updatable = false)
-    var resourceId: Long? = null,
+    var resourceId: Long?,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false, length = 30)
     var operation: AuditOperation,
 
-    @Column(nullable = false, updatable = false, length = 500)
-    var summary: String,
+    @Column(name = "summary_key", nullable = false, updatable = false, length = 100)
+    var summaryKey: String,
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "summary_args", nullable = false, updatable = false)
+    var summaryArgs: List<String>,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: Instant
