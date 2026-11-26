@@ -4,12 +4,9 @@ import com.rubp.whattoeat.server.feature.account.domain.Role;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.domain.JwtTokenType;
 import com.rubp.whattoeat.server.feature.auth.service.JwtTokenService;
-import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
-import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import com.rubp.whattoeat.server.feature.invitation.service.InvitationAdminService;
 import com.rubp.whattoeat.server.testsupport.JwtTestKeys;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -26,18 +23,17 @@ import org.springframework.test.web.servlet.ResultActions;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Base64;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = InvitationAdminController.class, properties = "spring.profiles.active=test")
-@Import({InvitationAdminService.class, JwtTokenService.class, SecurityConfig.class})
+@Import({JwtTokenService.class, SecurityConfig.class})
 public class InvitationAdminControllerTest {
 
     @Autowired
@@ -47,7 +43,7 @@ public class InvitationAdminControllerTest {
     private JwtTokenService jwtTokenService;
 
     @MockitoBean
-    private InvitationRepository invitationRepository;
+    private InvitationAdminService invitationAdminService;
 
     @DynamicPropertySource
     static void jwtProperties(DynamicPropertyRegistry registry) throws Exception {
@@ -57,16 +53,15 @@ public class InvitationAdminControllerTest {
     }
 
     @Test
-    public void createInvitation_shouldSaveAndReturnCodeForAdmin() throws Exception {
-        var result = createInvitation(Role.ADMIN)
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+    public void createInvitation_shouldReturnCodeForAdmin() throws Exception {
+        when(invitationAdminService.createInvitation()).thenReturn("Ab12Cd34Ef56Gh78Ij90Kl");
 
-        var invitationCaptor = ArgumentCaptor.forClass(InvitationEntry.class);
-        verify(invitationRepository).save(invitationCaptor.capture());
-        String code = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(invitationCaptor.getValue().getCode());
-        result.andExpect(jsonPath("$.invitationCode").value(code));
+        createInvitation(Role.ADMIN)
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.invitationCode").value("Ab12Cd34Ef56Gh78Ij90Kl"));
+
+        verify(invitationAdminService).createInvitation();
     }
 
     @Test
@@ -74,7 +69,7 @@ public class InvitationAdminControllerTest {
         createInvitation(Role.USER)
                 .andExpect(status().isForbidden());
 
-        verify(invitationRepository, never()).save(any(InvitationEntry.class));
+        verifyNoInteractions(invitationAdminService);
     }
 
     private ResultActions createInvitation(Role role) throws Exception {

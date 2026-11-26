@@ -6,5 +6,6 @@ enum class AuditResourceType {
     DISH,
     IMAGE,
     RATING,
-    ACCOUNT
+    ACCOUNT,
+    INVITATION
 }

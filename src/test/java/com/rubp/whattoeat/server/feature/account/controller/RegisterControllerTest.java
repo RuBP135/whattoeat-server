@@ -16,6 +16,7 @@ import com.rubp.whattoeat.server.feature.account.model.StartEmailRegistrationReq
 import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest;
 import com.rubp.whattoeat.server.feature.account.service.RegisterService;
 import com.rubp.whattoeat.server.feature.account.service.VerificationEmailSender;
+import com.rubp.whattoeat.server.feature.audit.service.AdminAuditService;
 import com.rubp.whattoeat.server.feature.auth.config.SecurityConfig;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenEntry;
 import com.rubp.whattoeat.server.feature.auth.data.RefreshTokenRepository;
@@ -115,6 +116,9 @@ public class RegisterControllerTest {
 
     @MockitoBean
     private InvitationRepository invitationRepository;
+
+    @MockitoBean
+    private AdminAuditService adminAuditService;
 
     @MockitoBean
     private EmailCoolDownRepository emailCoolDownRepository;

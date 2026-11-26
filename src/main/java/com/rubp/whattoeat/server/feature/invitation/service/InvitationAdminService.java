@@ -2,6 +2,9 @@ package com.rubp.whattoeat.server.feature.invitation.service;
 
 import com.rubp.whattoeat.server.core.codec.Base64UrlCodec;
 import com.rubp.whattoeat.server.core.crypto.RandomCodeGenerator;
+import com.rubp.whattoeat.server.feature.audit.domain.AuditOperation;
+import com.rubp.whattoeat.server.feature.audit.domain.AuditResourceType;
+import com.rubp.whattoeat.server.feature.audit.service.AdminAuditService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationRepository;
 import com.rubp.whattoeat.server.feature.invitation.exception.InvalidInvitationCodeException;
@@ -21,13 +24,16 @@ import java.time.Instant;
 public class InvitationAdminService {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationAdminService.class);
+    private static final int MASKED_PREFIX_LENGTH = 4;
 
     private final InvitationRepository invitationRepository;
+    private final AdminAuditService adminAuditService;
     private final Clock clock;
     private final Duration ttl;
 
     public InvitationAdminService(
             InvitationRepository invitationRepository,
+            AdminAuditService adminAuditService,
             Clock clock,
             @Value("${invitation.ttl}") Duration ttl
     ) {
@@ -36,20 +42,32 @@ public class InvitationAdminService {
         }
 
         this.invitationRepository = invitationRepository;
+        this.adminAuditService = adminAuditService;
         this.clock = clock;
         this.ttl = ttl;
     }
 
+    @Transactional
     public String createInvitation() {
         Instant expiresAt = Instant.now(clock).plus(ttl);
         byte[] code = RandomCodeGenerator.generate();
 
-        invitationRepository.save(new InvitationEntry(
+        InvitationEntry savedInvitation = invitationRepository.save(new InvitationEntry(
                 code,
                 expiresAt
         ));
+        String encodedCode = Base64UrlCodec.encode(code);
 
-        return Base64UrlCodec.encode(code);
+        adminAuditService.record(
+                AuditOperation.CREATE,
+                AuditResourceType.INVITATION,
+                savedInvitation.getId(),
+                "audit.invitation.create",
+                savedInvitation.getId(),
+                encodedCode.substring(0, MASKED_PREFIX_LENGTH) + "****"
+        );
+
+        return encodedCode;
     }
 
     public InvitationEntry findValidInvitation(String invitationCode) {
