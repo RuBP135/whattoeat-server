@@ -10,7 +10,7 @@ interface DishRepository : JpaRepository<DishEntry, Long> {
         select dish
         from DishEntry dish
         where dish.stall.id = :stallId
-        order by dish.name
+        order by dish.id
         """
     )
     fun findByStallId(@Param("stallId") stallId: Long): List<DishEntry>
