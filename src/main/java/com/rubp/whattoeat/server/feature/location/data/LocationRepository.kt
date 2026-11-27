@@ -8,7 +8,7 @@ interface LocationRepository : JpaRepository<LocationEntry, Long> {
         """
         select location
         from LocationEntry location
-        order by location.id
+        order by location.ordinal, location.id
         """
     )
     override fun findAll(): List<LocationEntry>
