@@ -1,5 +1,6 @@
 package com.rubp.whattoeat.server.feature.location.service
 
+import com.rubp.whattoeat.server.core.data.isForeignKeyViolation
 import com.rubp.whattoeat.server.core.data.isUniqueViolation
 import com.rubp.whattoeat.server.feature.audit.domain.AuditOperation
 import com.rubp.whattoeat.server.feature.audit.domain.AuditResourceType
@@ -7,6 +8,7 @@ import com.rubp.whattoeat.server.feature.audit.service.AdminAuditService
 import com.rubp.whattoeat.server.feature.location.data.CampusEntry
 import com.rubp.whattoeat.server.feature.location.data.CampusRepository
 import com.rubp.whattoeat.server.feature.location.exception.CampusAlreadyExistsException
+import com.rubp.whattoeat.server.feature.location.exception.CampusInUseException
 import com.rubp.whattoeat.server.feature.location.exception.CampusNotFoundException
 import com.rubp.whattoeat.server.feature.location.model.CampusRequest
 import com.rubp.whattoeat.server.feature.location.model.CampusResponse
@@ -55,6 +57,28 @@ class CampusAdminService(
             "audit.campus.rename",
             oldName,
             request.name
+        )
+    }
+
+    @Transactional
+    fun deleteCampus(campusId: Long) {
+        val campusName = campusRepository.findNameByIdForUpdate(campusId)
+            ?: throw CampusNotFoundException()
+        try {
+            campusRepository.deleteById(campusId)
+            campusRepository.flush()
+        } catch (exception: DataIntegrityViolationException) {
+            if (exception.isForeignKeyViolation()) {
+                throw CampusInUseException()
+            }
+            throw exception
+        }
+        adminAuditService.record(
+            AuditOperation.DELETE,
+            AuditResourceType.CAMPUS,
+            campusId,
+            "audit.campus.delete",
+            campusName
         )
     }
 

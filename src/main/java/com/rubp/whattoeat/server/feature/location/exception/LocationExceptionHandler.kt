@@ -24,4 +24,10 @@ class LocationExceptionHandler(
     fun handleCampusNotFound(): ErrorResponse {
         return errorResponseFactory.create("CAMPUS_NOT_FOUND", "location.campus.not_found")
     }
+
+    @ExceptionHandler(CampusInUseException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleCampusInUse(): ErrorResponse {
+        return errorResponseFactory.create("CAMPUS_IN_USE", "location.campus.in_use")
+    }
 }
