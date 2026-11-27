@@ -4,6 +4,8 @@ import com.rubp.whattoeat.server.feature.stall.data.StallEntry
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -19,7 +21,8 @@ import org.hibernate.annotations.OnDeleteAction
 )
 class DishEntry(
     @Id
-    var id: Long,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long = 0,
 
     @Column(nullable = false, length = 80)
     var name: String,

@@ -9,7 +9,7 @@ class LocationService(
     private val locationRepository: LocationRepository
 ) {
     fun listLocations(): List<LocationResponse> {
-        return locationRepository.findAllByOrderByIdAsc().map { location ->
+        return locationRepository.findAll().map { location ->
             LocationResponse(location.id, location.name, location.kind)
         }
     }
