@@ -5,6 +5,7 @@ import com.rubp.whattoeat.server.feature.dish.model.DishResponse
 import com.rubp.whattoeat.server.feature.dish.service.DishAdminService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -40,5 +41,11 @@ class DishAdminController(
         @Valid @RequestBody request: DishRequest
     ) {
         dishAdminService.renameDish(dishId, request)
+    }
+
+    @DeleteMapping("/dishes/{dishId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteDish(@PathVariable("dishId") dishId: Long) {
+        dishAdminService.deleteDish(dishId)
     }
 }

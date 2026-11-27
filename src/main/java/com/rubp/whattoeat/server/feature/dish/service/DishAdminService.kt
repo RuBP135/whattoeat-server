@@ -71,6 +71,20 @@ class DishAdminService(
         )
     }
 
+    @Transactional
+    fun deleteDish(dishId: Long) {
+        val dishName = dishRepository.findNameByIdForUpdate(dishId)
+            ?: throw DishNotFoundException()
+        dishRepository.deleteById(dishId)
+        adminAuditService.record(
+            AuditOperation.DELETE,
+            AuditResourceType.DISH,
+            dishId,
+            "audit.dish.delete",
+            dishName
+        )
+    }
+
     private fun dishWriteFailure(exception: DataIntegrityViolationException): RuntimeException {
         return if (exception.isUniqueViolation()) {
             DishAlreadyExistsException()
