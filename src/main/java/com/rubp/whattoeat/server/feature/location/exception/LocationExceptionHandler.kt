@@ -54,4 +54,28 @@ class LocationExceptionHandler(
     fun handleInvalidBuildingOrder(): ErrorResponse {
         return errorResponseFactory.create("INVALID_REQUEST", "error.request.invalid_parameter")
     }
+
+    @ExceptionHandler(LocationAlreadyExistsException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleLocationNameAlreadyExists(): ErrorResponse {
+        return errorResponseFactory.create("LOCATION_NAME_EXISTS", "location.name_exists")
+    }
+
+    @ExceptionHandler(LocationNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleLocationNotFound(): ErrorResponse {
+        return errorResponseFactory.create("LOCATION_NOT_FOUND", "location.not_found")
+    }
+
+    @ExceptionHandler(LocationInUseException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleLocationInUse(): ErrorResponse {
+        return errorResponseFactory.create("LOCATION_IN_USE", "location.in_use")
+    }
+
+    @ExceptionHandler(InvalidLocationOrderException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidLocationOrder(): ErrorResponse {
+        return errorResponseFactory.create("INVALID_REQUEST", "error.request.invalid_parameter")
+    }
 }

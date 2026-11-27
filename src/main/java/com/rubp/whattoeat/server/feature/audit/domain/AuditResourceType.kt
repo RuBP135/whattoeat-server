@@ -9,5 +9,6 @@ enum class AuditResourceType {
     ACCOUNT,
     INVITATION,
     CAMPUS,
-    BUILDING
+    BUILDING,
+    LOCATION
 }
