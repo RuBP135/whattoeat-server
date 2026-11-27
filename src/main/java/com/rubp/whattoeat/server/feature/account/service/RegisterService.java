@@ -23,7 +23,7 @@ import com.rubp.whattoeat.server.feature.account.model.VerifyRegistrationRequest
 import com.rubp.whattoeat.server.feature.auth.service.SessionTokenService;
 import com.rubp.whattoeat.server.feature.invitation.data.InvitationEntry;
 import com.rubp.whattoeat.server.feature.invitation.exception.InvalidInvitationCodeException;
-import com.rubp.whattoeat.server.feature.invitation.service.InvitationService;
+import com.rubp.whattoeat.server.feature.invitation.service.InvitationAdminService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,7 @@ public class RegisterService {
 
     private final Clock clock;
     private final AccountRepository accountRepository;
-    private final InvitationService invitationService;
+    private final InvitationAdminService invitationAdminService;
     private final EmailCoolDownRepository emailCoolDownRepository;
     private final AccountEmailCrypto emailCrypto;
     private final VerificationEmailSender verificationEmailSender;
@@ -51,7 +51,7 @@ public class RegisterService {
     public RegisterService(
             Clock clock,
             AccountRepository accountRepository,
-            InvitationService invitationService,
+            InvitationAdminService invitationAdminService,
             EmailCoolDownRepository emailCoolDownRepository,
             AccountEmailCrypto emailCrypto,
             VerificationEmailSender verificationEmailSender,
@@ -62,7 +62,7 @@ public class RegisterService {
     ) {
         this.clock = clock;
         this.accountRepository = accountRepository;
-        this.invitationService = invitationService;
+        this.invitationAdminService = invitationAdminService;
         this.emailCoolDownRepository = emailCoolDownRepository;
         this.emailCrypto = emailCrypto;
         this.verificationEmailSender = verificationEmailSender;
@@ -73,7 +73,7 @@ public class RegisterService {
     }
 
     public StartRegistrationResponse startRegistration(StartEmailRegistrationRequest request) {
-        InvitationEntry invitation = invitationService.findValidInvitation(request.invitationCode());
+        InvitationEntry invitation = invitationAdminService.findValidInvitation(request.invitationCode());
 
         String email = request.email().strip();
         byte[] emailHmac = emailCrypto.hmac(email);
@@ -133,7 +133,7 @@ public class RegisterService {
         );
         account.setEmail(session.getEmailCiphertext(), session.getEmailHmac());
 
-        if (!invitationService.consumeInvitation(invitationCode)) {
+        if (!invitationAdminService.consumeInvitation(invitationCode)) {
             throw new InvalidInvitationCodeException();
         }
         if (accountRepository.insertIfEmailAbsent(account) == 0) {

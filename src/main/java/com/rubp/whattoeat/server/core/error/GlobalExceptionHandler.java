@@ -1,4 +1,4 @@
-package com.rubp.whattoeat.server.core.web.error;
+package com.rubp.whattoeat.server.core.error;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;

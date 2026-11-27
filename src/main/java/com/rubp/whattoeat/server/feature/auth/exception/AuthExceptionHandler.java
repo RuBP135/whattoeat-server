@@ -1,7 +1,7 @@
 package com.rubp.whattoeat.server.feature.auth.exception;
 
-import com.rubp.whattoeat.server.core.web.error.ErrorResponse;
-import com.rubp.whattoeat.server.core.web.error.ErrorResponseFactory;
+import com.rubp.whattoeat.server.core.error.ErrorResponse;
+import com.rubp.whattoeat.server.core.error.ErrorResponseFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
