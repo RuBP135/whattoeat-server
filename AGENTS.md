@@ -30,12 +30,12 @@ server/
 ## 5. 命名规范
 
 - **整体一致**：变量名、方法名、类名等应与仓库既有代码风格一致，不要混搭。
-- **Repository 层命名**：
+- **Repository 层**：
+  - 简短命名 + @Query：业务排序方式基本是固定的，大多数情况可用简短命名加 @Query（如 findAll、findById、findNameById），无需用 Spring Data JPA 派生命名拼出冗长方法；但像 findById、deleteById、findByUsername、existsByEmailHmac 这类简短的单字段查询且没有特殊要求时，仍然可以保留直接使用。
   - **省略主实体名**：依托 `*Repository` 接口上下文，操作主表的方法不重复主实体名（比如应该用 `findAll`、`findById`、`updateNameById`，而不是 `findStalls`、`deleteCategoryById`）。
-  - **规避父接口冲突**：自定义 `@Modifying` 删除需返回受影响行数（`Int`）而无法重写 `CrudRepository.deleteById` 时，改用 `removeById` 就行。
   - **主表主键命名**：直接按主表主键操作的方法统一体现 `ById`（如 `findById`、`updateNameById`、`removeById`），主键参数统一简写为 `id`。
   - **关联表命名**：操作关联表（如 `*_link`）的方法统一用 `Links` 指代关联记录（如 `insertLinks`、`deleteLinksByStallId`、`deleteLinksByCategoryId`）；多表外键时保留明确前缀（如 `stallId`、`categoryId`）。
-- **Controller / Service 层命名**：保留业务资源名词以明确用例语义（如列表 `listStalls`、单条 `getStall`、写操作 `createCategory` / `renameCategory` / `deleteCategory`）。
+- **Controller / Service 层**：保留业务资源名词以明确用例语义（如 `listStalls`、`getStall`、`createCategory` / `renameCategory` / `deleteCategory`）。
 
 ## 6.指令规范
 
@@ -61,3 +61,8 @@ server/
 
 - **提交格式**：统一使用 `类别前缀(修改范围): 描述`，例如 `feat(JwtTokenService): 增加创建并签名的createToken方法`。描述应简洁、准确地说明本次变更。
 - **提交粒度**：每次提交应围绕一个明确的功能、修复或重构，避免混入无关改动。较大的变更应按职责合理拆分，但不得为缩小提交规模而破坏功能完整性或代码的可编译性。
+
+## 12. 管理员操作审计
+
+- 管理员增、删、改等写操作成功时需在 `@Transactional` 事务中调用 `AdminAuditService.record(...)` 记录审计（具体参数见方法注释）。
+- 新增审计事件时，同步在 `i18n/messages*.properties` 补充各语言摘要模板；涉及新资源时补充 `AuditResourceType`。
