@@ -18,4 +18,10 @@ class LocationExceptionHandler(
     fun handleCampusNameAlreadyExists(): ErrorResponse {
         return errorResponseFactory.create("CAMPUS_NAME_EXISTS", "location.campus.name_exists")
     }
+
+    @ExceptionHandler(CampusNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleCampusNotFound(): ErrorResponse {
+        return errorResponseFactory.create("CAMPUS_NOT_FOUND", "location.campus.not_found")
+    }
 }
