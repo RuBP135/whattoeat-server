@@ -18,4 +18,10 @@ class DishExceptionHandler(
     fun handleDishNameAlreadyExists(): ErrorResponse {
         return errorResponseFactory.create("DISH_NAME_EXISTS", "dish.name_exists")
     }
+
+    @ExceptionHandler(DishNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleDishNotFound(): ErrorResponse {
+        return errorResponseFactory.create("DISH_NOT_FOUND", "dish.not_found")
+    }
 }
