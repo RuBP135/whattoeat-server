@@ -1,6 +1,6 @@
 package com.rubp.whattoeat.server.core.config
 
-import com.rubp.whattoeat.server.core.web.error.ErrorResponseFactory
+import com.rubp.whattoeat.server.core.error.ErrorResponseFactory
 import org.springframework.context.MessageSource
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

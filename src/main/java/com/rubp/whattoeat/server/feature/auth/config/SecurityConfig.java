@@ -8,7 +8,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.rubp.whattoeat.server.core.crypto.KeyFileReader;
-import com.rubp.whattoeat.server.core.web.error.ErrorResponseFactory;
+import com.rubp.whattoeat.server.core.error.ErrorResponseFactory;
 import com.rubp.whattoeat.server.feature.account.domain.Role;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
