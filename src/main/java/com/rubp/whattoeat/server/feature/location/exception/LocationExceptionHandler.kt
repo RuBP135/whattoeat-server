@@ -30,4 +30,28 @@ class LocationExceptionHandler(
     fun handleCampusInUse(): ErrorResponse {
         return errorResponseFactory.create("CAMPUS_IN_USE", "location.campus.in_use")
     }
+
+    @ExceptionHandler(BuildingAlreadyExistsException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleBuildingNameAlreadyExists(): ErrorResponse {
+        return errorResponseFactory.create("BUILDING_NAME_EXISTS", "location.building.name_exists")
+    }
+
+    @ExceptionHandler(BuildingNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleBuildingNotFound(): ErrorResponse {
+        return errorResponseFactory.create("BUILDING_NOT_FOUND", "location.building.not_found")
+    }
+
+    @ExceptionHandler(BuildingInUseException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleBuildingInUse(): ErrorResponse {
+        return errorResponseFactory.create("BUILDING_IN_USE", "location.building.in_use")
+    }
+
+    @ExceptionHandler(InvalidBuildingOrderException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidBuildingOrder(): ErrorResponse {
+        return errorResponseFactory.create("INVALID_REQUEST", "error.request.invalid_parameter")
+    }
 }
