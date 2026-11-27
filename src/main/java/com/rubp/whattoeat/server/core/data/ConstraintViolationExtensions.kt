@@ -18,3 +18,8 @@ fun Throwable.isUniqueViolation(constraintName: String): Boolean {
                 && it.constraintName?.substringAfterLast('.')?.equals(constraintName, ignoreCase = true) == true
     }
 }
+
+fun Throwable.isForeignKeyViolation(): Boolean =
+    causes().any {
+        it is ConstraintViolationException && it.kind == ConstraintKind.FOREIGN_KEY
+    }
