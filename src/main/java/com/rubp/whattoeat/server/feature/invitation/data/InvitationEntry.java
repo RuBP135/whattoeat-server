@@ -5,7 +5,12 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "invitation")
+@Table(
+    name = "invitation",
+    indexes = {
+        @Index(columnList = "expires_at")
+    }
+)
 public class InvitationEntry {
 
     @Id

@@ -12,15 +12,15 @@ interface AdminAuditLogRepository : JpaRepository<AdminAuditLogEntry, Long> {
         select log
         from AdminAuditLogEntry log
         join fetch log.admin
-        where (:operation is null or log.operation = :operation)
-          and (:resourceType is null or log.resourceType = :resourceType)
+        where (:resourceType is null or log.resourceType = :resourceType)
+          and (:operation is null or log.operation = :operation)
         order by log.createdAt desc, log.id desc
         limit :size offset :offset
         """
     )
     fun findPage(
-        @Param("operation") operation: AuditOperation?,
         @Param("resourceType") resourceType: AuditResourceType?,
+        @Param("operation") operation: AuditOperation?,
         @Param("size") size: Int,
         @Param("offset") offset: Int
     ): List<AdminAuditLogEntry>

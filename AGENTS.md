@@ -66,3 +66,7 @@ server/
 
 - 管理员增、删、改等写操作成功时需在 `@Transactional` 事务中调用 `AdminAuditService.record(...)` 记录审计（具体参数见方法注释）。
 - 新增审计事件时，同步在 `i18n/messages*.properties` 补充各语言摘要模板；涉及新资源时补充 `AuditResourceType`。
+
+## 13.数据库兼容
+
+- 采用兼容 MySQL 和 PostgreSQL 的写法

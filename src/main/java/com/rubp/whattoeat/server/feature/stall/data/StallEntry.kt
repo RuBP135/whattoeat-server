@@ -12,9 +12,13 @@ import jakarta.persistence.JoinTable
 import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Index
 
 @Entity
-@Table(name = "stall")
+@Table(
+    name = "stall",
+    indexes = [Index(columnList = "location_id, slot, id")],
+)
 class StallEntry(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,7 +41,10 @@ class StallEntry(
     @JoinTable(
         name = "stall_category_link",
         joinColumns = [JoinColumn(name = "stall_id", nullable = false)],
-        inverseJoinColumns = [JoinColumn(name = "category_id", nullable = false)]
+        inverseJoinColumns = [JoinColumn(name = "category_id", nullable = false)],
+        indexes = [
+            Index(columnList = "category_id")
+        ],
     )
     var categories: MutableSet<StallCategoryEntry> = mutableSetOf()
 }
