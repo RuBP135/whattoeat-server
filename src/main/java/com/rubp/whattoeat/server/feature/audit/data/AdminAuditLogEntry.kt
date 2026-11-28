@@ -23,9 +23,9 @@ import java.time.Instant
 @Table(
     name = "admin_audit_log",
     indexes = [
-        Index(columnList = "created_at"),
-        Index(columnList = "admin_id, created_at"),
-        Index(columnList = "resource_type, resource_id, created_at")
+        Index(columnList = "created_at, id"),
+        Index(columnList = "resource_type, operation, created_at DESC, id DESC"),
+        Index(columnList = "admin_id")
     ]
 )
 class AdminAuditLogEntry(
