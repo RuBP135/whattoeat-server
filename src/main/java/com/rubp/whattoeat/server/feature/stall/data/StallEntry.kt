@@ -15,7 +15,10 @@ import jakarta.persistence.Table
 import jakarta.persistence.Index
 
 @Entity
-@Table(name = "stall")
+@Table(
+    name = "stall",
+    indexes = [Index(columnList = "location_id, slot, id")],
+)
 class StallEntry(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
