@@ -94,8 +94,8 @@ class AdminAuditService(
 
         val locale = LocaleContextHolder.getLocale()
         val items = adminAuditLogRepository.findPage(
-            operation,
             resourceType,
+            operation,
             size,
             offset.toInt()
         ).map { entry ->

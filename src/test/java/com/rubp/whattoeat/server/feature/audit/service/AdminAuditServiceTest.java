@@ -70,7 +70,7 @@ public class AdminAuditServiceTest {
 
         LocaleContextHolder.setLocale(Locale.CHINESE);
         when(adminAuditLogRepository.countAll(AuditOperation.CREATE, AuditResourceType.STALL)).thenReturn(1L);
-        when(adminAuditLogRepository.findPage(AuditOperation.CREATE, AuditResourceType.STALL, 20, 0))
+        when(adminAuditLogRepository.findPage(AuditResourceType.STALL, AuditOperation.CREATE, 20, 0))
                 .thenReturn(List.of(entry));
 
         PageResponse<AdminAuditLogResponse> zhResult = adminAuditService.listAuditLogs(
@@ -81,7 +81,7 @@ public class AdminAuditServiceTest {
         );
 
         verify(adminAuditLogRepository).countAll(AuditOperation.CREATE, AuditResourceType.STALL);
-        verify(adminAuditLogRepository).findPage(AuditOperation.CREATE, AuditResourceType.STALL, 20, 0);
+        verify(adminAuditLogRepository).findPage(AuditResourceType.STALL, AuditOperation.CREATE, 20, 0);
         assertEquals(0, zhResult.getPage());
         assertEquals(20, zhResult.getSize());
         assertEquals(1L, zhResult.getTotal());
